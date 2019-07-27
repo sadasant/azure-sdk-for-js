@@ -59,11 +59,13 @@ import {
   RequestOptions
 } from "./keysModels";
 import { parseKeyvaultIdentifier as parseKeyvaultEntityIdentifier } from "./core/utils";
+import { CryptographyClient } from "./CryptographyClient"
 
 export {
   CreateEcKeyOptions,
   CreateRsaKeyOptions,
   CreateKeyOptions,
+  CryptographyClient,
   DeletedKey,
   DeletionRecoveryLevel,
   GetKeyOptions,

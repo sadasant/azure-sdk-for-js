@@ -1,7 +1,10 @@
 import { GetKeyOptions, RequestOptions } from "./keysModels";
 import { JsonWebKey, JsonWebKeyEncryptionAlgorithm, JsonWebKeySignatureAlgorithm } from "./core/models";
 import {
-  ServiceClientCredentials, TokenCredential, isNode, RequestPolicyFactory,
+  isNode,
+  ServiceClientCredentials,
+  TokenCredential,
+  RequestPolicyFactory,
   isTokenCredential,
   deserializationPolicy,
   signingPolicy,
@@ -25,11 +28,13 @@ import {
 } from "./core/keyVaultBase";
 import { KeyVaultClient } from "./core/keyVaultClient";
 import { challengeBasedAuthenticationPolicy } from "./core/challengeBasedAuthenticationPolicy";
+import * as crypto from "crypto";
+import { jwk2pem, RSA_JWK } from "pem-jwk";
 
 export class CryptographyClient {
   public async getKey(options?: GetKeyOptions): Promise<JsonWebKey> {
     if (typeof this.key === "string") {
-      if (!this.name || this.name == "") {
+      if (!this.name || this.name === "") {
         throw new Error("getKey requires a key with a name");
       }
       const key = await this.client.getKey(
@@ -51,15 +56,42 @@ export class CryptographyClient {
     _authenticationData?: Uint8Array,
     options?: RequestOptions
   ): Promise<Uint8Array> {
-    // TODO: How do we distinguish between doing a service call or encrypting locally?
-    // TODO: How do we derive the remote key from a JWK object?
+    const key = await this.getKey();
 
-    if (this.name && this.version) {
-      let result = await this.client.encrypt(this.vaultBaseUrl, this.name, this.version, algorithm, plaintext, options);
-      return result.result!;
-    } else {
-      throw new Error("Local crypto not yet supported");
+    // First we try to encrypt locally. If we have enough information we'll return right away.
+    if (key.kty === "RSA" && key.e && key.n) {
+      if (isNode) {
+        const rsaKey: RSA_JWK = {
+          kty: key.kty || "",
+          d: new Buffer(key.d!.buffer).toString("utf-8"),
+          e: new Buffer(key.e.buffer).toString("utf-8"),
+          n: new Buffer(key.n.buffer).toString("utf-8")
+        }
+        const pem = jwk2pem(rsaKey);
+        if (algorithm === "RSA-OAEP") {
+          return crypto.publicEncrypt(
+            {
+              key: pem,
+              padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+            },
+            new Buffer(plaintext.buffer)
+          );
+        }
+      } else {
+        console.log("BROWSER COMING SOON");
+      }
     }
+    if (key.kty === "EC" && key.crv && key.x && key.y && key.d) {
+      if (isNode) {
+        console.log("NODE COMING SOON");
+      } else {
+        console.log("BROWSER COMING SOON");
+      }
+    }
+
+    // Otherwise, we encrypt using the service.
+    const result = await this.client.encrypt(this.vaultBaseUrl, this.name || "", this.version || "", algorithm, plaintext, options);
+    return result.result!;
   }
 
   public async decrypt(
@@ -70,12 +102,43 @@ export class CryptographyClient {
     _authenticationTag?: Uint8Array,
     options?: RequestOptions
   ): Promise<Uint8Array> {
-    if (this.name && this.version) {
-      let result = await this.client.decrypt(this.vaultBaseUrl, this.name, this.version, algorithm, ciphertext, options);
-      return result.result!;
-    } else {
-      throw new Error("Local crypto not yet supported");
+    const key = await this.getKey();
+
+    // First we try to decrypt locally. If we have enough information we'll return right away.
+    if (key.kty === "RSA" && key.e && key.n) {
+      if (isNode) {
+        const rsaKey: RSA_JWK = {
+          kty: key.kty || "",
+          d: new Buffer(key.d!.buffer).toString("utf-8"),
+          e: new Buffer(key.e.buffer).toString("utf-8"),
+          n: new Buffer(key.n.buffer).toString("utf-8")
+        }
+        const pem = jwk2pem(rsaKey);
+        if (algorithm === "RSA-OAEP") {
+          return crypto.privateDecrypt(
+            {
+              key: pem,
+              passphrase: new Buffer(_authenticationData!.buffer).toString("utf-8"), // TODO: Is this correct?
+              padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+            },
+            Buffer.from(ciphertext)
+          );
+        }
+      } else {
+        console.log("BROWSER COMING SOON");
+      }
     }
+    if (key.kty === "EC" && key.crv && key.x && key.y && key.d) {
+      if (isNode) {
+        console.log("NODE COMING SOON");
+      } else {
+        console.log("BROWSER COMING SOON");
+      }
+    }
+
+    // Otherwise, we decrypt using the service.
+    const result = await this.client.decrypt(this.vaultBaseUrl, this.name || "", this.version || "", algorithm, ciphertext, options);
+    return result.result!;
   }
 
   public async wrapKey(
@@ -257,13 +320,13 @@ export class CryptographyClient {
     this.key = key;
 
     if (typeof this.key === "string") {
-      let parsed = parseKeyvaultIdentifier("keys", this.key);
+      const parsed = parseKeyvaultIdentifier("keys", this.key);
 
-      if (parsed.name == "") {
+      if (parsed.name === "") {
         throw new Error("Could not find 'name' of key in key URL");
       }
 
-      if (!parsed.version || parsed.version == "") {
+      if (!parsed.version || parsed.version === "") {
         throw new Error("Could not find 'version' of key in key URL");
       }
 
