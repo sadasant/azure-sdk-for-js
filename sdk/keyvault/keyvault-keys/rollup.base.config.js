@@ -132,7 +132,7 @@ export function browserConfig(test = false) {
     baseConfig.plugins.unshift(multiEntry({ exports: false }));
     baseConfig.output.file = "dist-test/index.browser.js";
     // mark fs-extra as external
-    baseConfig.external = ["fs-extra", "path"];
+    baseConfig.external = ["fs-extra", "path", "crypto", "constants"];
     baseConfig.context = "null";
 
     // Disable tree-shaking of test code.  In rollup-plugin-node-resolve@5.0.0, rollup started respecting

@@ -1,7 +1,10 @@
 import { GetKeyOptions, RequestOptions } from "./keysModels";
 import { JsonWebKey, JsonWebKeyEncryptionAlgorithm, JsonWebKeySignatureAlgorithm } from "./core/models";
 import {
-  ServiceClientCredentials, TokenCredential, isNode, RequestPolicyFactory,
+  ServiceClientCredentials,
+  TokenCredential,
+  isNode,
+  RequestPolicyFactory,
   isTokenCredential,
   deserializationPolicy,
   signingPolicy,
@@ -25,14 +28,44 @@ import {
 } from "./core/keyVaultBase";
 import { KeyVaultClient } from "./core/keyVaultClient";
 import { challengeBasedAuthenticationPolicy } from "./core/challengeBasedAuthenticationPolicy";
+import * as constants from "constants";
 import * as crypto from "crypto";
 import * as constants from "constants";
 const keyto = require("@trust/keyto");
 
 export class CryptographyClient {
+  private async fetchFullKeyIfPossible(): void {
+    if (!this.hasTriedToGetKey) {
+      try {
+        this.key = await this.getKey();
+      } catch {
+        console.error("Failed to get the full key");
+      }
+      this.hasTriedToGetKey = true;
+    }
+  }
+ 
+  private static getUserAgentString(telemetry?: TelemetryOptions): string {
+    const userAgentInfo: string[] = [];
+    if (telemetry) {
+      if (userAgentInfo.indexOf(telemetry.value) === -1) {
+        userAgentInfo.push(telemetry.value);
+      }
+    }
+    const libInfo = `azsdk-js-keyvault-keys/${SDK_VERSION}`;
+    if (userAgentInfo.indexOf(libInfo) === -1) {
+      userAgentInfo.push(libInfo);
+    }
+    const defaultUserAgentInfo = getDefaultUserAgentValue();
+    if (userAgentInfo.indexOf(defaultUserAgentInfo) === -1) {
+      userAgentInfo.push(defaultUserAgentInfo);
+    }
+    return userAgentInfo.join(" ");
+  }
+
   public async getKey(options?: GetKeyOptions): Promise<JsonWebKey> {
     if (typeof this.key === "string") {
-      if (!this.name || this.name == "") {
+      if (!this.name || this.name === "") {
         throw new Error("getKey requires a key with a name");
       }
       const key = await this.client.getKey(
@@ -56,18 +89,20 @@ export class CryptographyClient {
   ): Promise<Uint8Array> {
     await this.fetchFullKeyIfPossible();
 
+    let keyPEM: string;
+    let padded: any;
+
     if (typeof this.key !== "string") {
       switch (algorithm) {
         case "RSA1_5": {
-          let keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
-
-          let padded: any = { key: keyPEM, type: "public", padding: constants.RSA_PKCS1_PADDING };
+          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
+          padded = { key: keyPEM, type: "public", padding: constants.RSA_PKCS1_PADDING };
           const encrypted = crypto.publicEncrypt(padded, Buffer.from(plaintext));
           return encrypted;
         };
         case "RSA-OAEP": {
-          let keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
-
+          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
+          padded = { key: keyPEM, type: "private", padding: constants.RSA_PKCS1_OAEP_PADDING };
           const encrypted = crypto.publicEncrypt(keyPEM, Buffer.from(plaintext));
           return encrypted;
         };
@@ -75,7 +110,7 @@ export class CryptographyClient {
     }
 
     // Default to the service
-    let result = await this.client.encrypt(this.vaultBaseUrl, this.name, this.version, algorithm, plaintext, options);
+    const result = await this.client.encrypt(this.vaultBaseUrl, this.name, this.version, algorithm, plaintext, options);
     return result.result!;
   }
 
@@ -88,9 +123,31 @@ export class CryptographyClient {
     options?: RequestOptions
   ): Promise<Uint8Array> {
     await this.fetchFullKeyIfPossible();
+    if (typeof this.key !== "string") {
+      let keyPEM: string;
+      let padded: any;
+      switch (algorithm) {
+        case "RSA1_5": {
+          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'private_pkcs1');
+          console.log("<<Locally encrypted>>");
+
+          padded = { key: keyPEM, type: "private", padding: constants.RSA_PKCS1_PADDING };
+          const encrypted = crypto.privateDecrypt(padded, Buffer.from(ciphertext));
+          return encrypted;
+        };
+        case "RSA-OAEP": {
+          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'private_pkcs1');
+          console.log("<<Locally encrypted>>");
+
+          padded = { key: keyPEM, type: "private", padding: constants.RSA_PKCS1_OAEP_PADDING };
+          const encrypted = crypto.privateDecrypt(padded, Buffer.from(ciphertext));
+          return encrypted;
+        };
+      }
+    } 
 
     // Default to the service
-    let result = await this.client.decrypt(this.vaultBaseUrl, this.name, this.version, algorithm, ciphertext, options);
+    const result = await this.client.decrypt(this.vaultBaseUrl, this.name, this.version, algorithm, ciphertext, options);
     return result.result!;
   }
 
@@ -102,7 +159,7 @@ export class CryptographyClient {
     await this.fetchFullKeyIfPossible();
 
     // Default to the service
-    let result = await this.client.wrapKey(this.vaultBaseUrl, this.name, this.version, algorithm, key, options);
+    const result = await this.client.wrapKey(this.vaultBaseUrl, this.name, this.version, algorithm, key, options);
     return result.result!;
   }
 
@@ -114,7 +171,7 @@ export class CryptographyClient {
     await this.fetchFullKeyIfPossible();
 
     // Default to the service
-    let result = await this.client.unwrapKey(this.vaultBaseUrl, this.name, this.version, algorithm, encryptedKey, options);
+    const result = await this.client.unwrapKey(this.vaultBaseUrl, this.name, this.version, algorithm, encryptedKey, options);
     return result.result!;
   }
 
@@ -126,7 +183,7 @@ export class CryptographyClient {
     await this.fetchFullKeyIfPossible();
 
     // Default to the service
-    let result = await this.client.sign(this.vaultBaseUrl, this.name, this.version, algorithm, digest, options);
+    const result = await this.client.sign(this.vaultBaseUrl, this.name, this.version, algorithm, digest, options);
     return result.result!;
   }
 
@@ -151,11 +208,11 @@ export class CryptographyClient {
     await this.fetchFullKeyIfPossible();
 
     // Default to the service
-    let hash = crypto.createHash("sha256");
+    const hash = crypto.createHash("sha256");
 
     hash.update(Buffer.from(data));
-    let digest = hash.digest();
-    let result = await this.client.sign(this.vaultBaseUrl, this.name, this.version, algorithm, digest, options);
+    const digest = hash.digest();
+    const result = await this.client.sign(this.vaultBaseUrl, this.name, this.version, algorithm, digest, options);
     return result.result!;
   }
 
@@ -170,7 +227,7 @@ export class CryptographyClient {
     if (this.key !== "string") {
       switch (algorithm) {
         case ("RS256"): {
-          let keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
+          const keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
 
           console.log("<<Locally verified>>");
           const verifier = crypto.createVerify("SHA256");
@@ -183,11 +240,11 @@ export class CryptographyClient {
     }
 
     // Default to the service
-    let hash = crypto.createHash("sha256");
+    const hash = crypto.createHash("sha256");
 
     hash.update(Buffer.from(data));
-    let digest = hash.digest();
-    let result = await this.client.verify(this.vaultBaseUrl, this.name, this.version, algorithm, digest, signature, options);
+    const digest = hash.digest();
+    const result = await this.client.verify(this.vaultBaseUrl, this.name, this.version, algorithm, digest, signature, options);
     return result.value!;
   }
 
@@ -231,36 +288,6 @@ export class CryptographyClient {
       httpPipelineLogger: pipelineOptions.logger,
       requestPolicyFactories
     };
-  }
-
-  private static getUserAgentString(telemetry?: TelemetryOptions): string {
-    const userAgentInfo: string[] = [];
-    if (telemetry) {
-      if (userAgentInfo.indexOf(telemetry.value) === -1) {
-        userAgentInfo.push(telemetry.value);
-      }
-    }
-    const libInfo = `azsdk-js-keyvault-keys/${SDK_VERSION}`;
-    if (userAgentInfo.indexOf(libInfo) === -1) {
-      userAgentInfo.push(libInfo);
-    }
-    const defaultUserAgentInfo = getDefaultUserAgentValue();
-    if (userAgentInfo.indexOf(defaultUserAgentInfo) === -1) {
-      userAgentInfo.push(defaultUserAgentInfo);
-    }
-    return userAgentInfo.join(" ");
-  }
-
-  private async fetchFullKeyIfPossible() {
-    if (!this.hasTriedToGetKey) {
-      try {
-        let result = await this.getKey();
-        this.key = result;
-      } catch {
-
-      }
-      this.hasTriedToGetKey = true;
-    }
   }
 
   /**
@@ -324,11 +351,11 @@ export class CryptographyClient {
       this.hasTriedToGetKey = true;
     }
 
-    if (parsed.name == "") {
+    if (parsed.name === "") {
       throw new Error("Could not find 'name' of key in key URL");
     }
 
-    if (!parsed.version || parsed.version == "") {
+    if (!parsed.version || parsed.version === "") {
       throw new Error("Could not find 'version' of key in key URL");
     }
 

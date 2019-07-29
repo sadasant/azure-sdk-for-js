@@ -32,7 +32,7 @@ import {
   JsonWebKeyCurveName,
   KeyItem,
   DeletionRecoveryLevel,
-  KeyVaultClientGetKeysOptionalParams
+  KeyVaultClientGetKeysOptionalParams,
 } from "./core/models";
 import { KeyVaultClient } from "./core/keyVaultClient";
 import { RetryConstants, SDK_VERSION } from "./core/utils/constants";
@@ -58,11 +58,13 @@ import {
   RequestOptions
 } from "./keysModels";
 import { parseKeyvaultIdentifier as parseKeyvaultEntityIdentifier } from "./core/utils";
+import { CryptographyClient } from "./cryptographyClient";
 
 export {
   CreateEcKeyOptions,
   CreateRsaKeyOptions,
   CreateKeyOptions,
+  CryptographyClient,
   DeletedKey,
   DeletionRecoveryLevel,
   GetKeyOptions,
