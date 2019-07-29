@@ -30,11 +30,14 @@ import { KeyVaultClient } from "./core/keyVaultClient";
 import { challengeBasedAuthenticationPolicy } from "./core/challengeBasedAuthenticationPolicy";
 import * as constants from "constants";
 import * as crypto from "crypto";
-import * as constants from "constants";
-const keyto = require("@trust/keyto");
+
+let keyto: any
+if (isNode) {
+  keyto = require("@trust/keyto");
+}
 
 export class CryptographyClient {
-  private async fetchFullKeyIfPossible(): void {
+  private async fetchFullKeyIfPossible(): Promise<void> {
     if (!this.hasTriedToGetKey) {
       try {
         this.key = await this.getKey();
@@ -93,19 +96,23 @@ export class CryptographyClient {
     let padded: any;
 
     if (typeof this.key !== "string") {
-      switch (algorithm) {
-        case "RSA1_5": {
-          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
-          padded = { key: keyPEM, type: "public", padding: constants.RSA_PKCS1_PADDING };
-          const encrypted = crypto.publicEncrypt(padded, Buffer.from(plaintext));
-          return encrypted;
-        };
-        case "RSA-OAEP": {
-          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
-          padded = { key: keyPEM, type: "private", padding: constants.RSA_PKCS1_OAEP_PADDING };
-          const encrypted = crypto.publicEncrypt(keyPEM, Buffer.from(plaintext));
-          return encrypted;
-        };
+      if (isNode) {
+        switch (algorithm) {
+          case "RSA1_5": {
+            keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
+            padded = { key: keyPEM, type: "public", padding: constants.RSA_PKCS1_PADDING };
+            const encrypted = crypto.publicEncrypt(padded, Buffer.from(plaintext));
+            return encrypted;
+          };
+          case "RSA-OAEP": {
+            keyPEM = keyto.from(this.key, "jwk").toString('pem', 'public_pkcs1');
+            padded = { key: keyPEM, type: "private", padding: constants.RSA_PKCS1_OAEP_PADDING };
+            const encrypted = crypto.publicEncrypt(keyPEM, Buffer.from(plaintext));
+            return encrypted;
+          };
+        }
+      } else {
+        console.warn("Local encryption in the browser is not available. Using the remote service.");
       }
     }
 
@@ -123,29 +130,6 @@ export class CryptographyClient {
     options?: RequestOptions
   ): Promise<Uint8Array> {
     await this.fetchFullKeyIfPossible();
-    if (typeof this.key !== "string") {
-      let keyPEM: string;
-      let padded: any;
-      switch (algorithm) {
-        case "RSA1_5": {
-          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'private_pkcs1');
-          console.log("<<Locally encrypted>>");
-
-          padded = { key: keyPEM, type: "private", padding: constants.RSA_PKCS1_PADDING };
-          const encrypted = crypto.privateDecrypt(padded, Buffer.from(ciphertext));
-          return encrypted;
-        };
-        case "RSA-OAEP": {
-          keyPEM = keyto.from(this.key, "jwk").toString('pem', 'private_pkcs1');
-          console.log("<<Locally encrypted>>");
-
-          padded = { key: keyPEM, type: "private", padding: constants.RSA_PKCS1_OAEP_PADDING };
-          const encrypted = crypto.privateDecrypt(padded, Buffer.from(ciphertext));
-          return encrypted;
-        };
-      }
-    } 
-
     // Default to the service
     const result = await this.client.decrypt(this.vaultBaseUrl, this.name, this.version, algorithm, ciphertext, options);
     return result.result!;

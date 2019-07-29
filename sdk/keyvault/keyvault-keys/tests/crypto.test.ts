@@ -2,13 +2,14 @@
 // Licensed under the MIT License.
 
 import * as assert from "assert";
+import { isNode } from "@azure/core-http";
 import { ClientSecretCredential } from "@azure/identity";
 import { CryptographyClient, Key, KeysClient } from "../src";
 import { authenticate } from "./utils/testAuthentication";
 import TestClient from "./utils/testClient";
 import { str2ab, ab2str } from "./utils/crypto"
 
-describe.only("CryptographyClient", () => {
+describe.only("CryptographyClient (all decrypts happen remotely)", () => {
   let client: KeysClient;
   let testClient: TestClient;
   let localCryptoClient: CryptographyClient;
@@ -26,7 +27,7 @@ describe.only("CryptographyClient", () => {
     recorder = authentication.recorder;
     testClient = authentication.testClient;
     credential = authentication.credential;
-    keyName = testClient.formatName("CryptographyClientTestKey0002");
+    keyName = testClient.formatName("cryptography-client-test");
     key = await client.createKey(keyName, "RSA");
     keyVaultUrl = key.vaultUrl;
     keyUrl = key.keyMaterial!.kid as string;
@@ -51,7 +52,7 @@ describe.only("CryptographyClient", () => {
     assert.equal(getKeyResult.kid, key.keyMaterial!.kid);
   });
 
-  it("encrypt & decrypt remotely with RSA1_5", async function() {
+  it("encrypt remotely with RSA1_5", async function() {
     const text = this.test!.title;
     const encrypted = await remoteCryptoClient.encrypt(str2ab(text), "RSA1_5");
     const decrypted = await remoteCryptoClient.decrypt(encrypted, "RSA1_5");
@@ -59,11 +60,31 @@ describe.only("CryptographyClient", () => {
     assert.equal(text, decryptedText);
   });
 
-  it("encrypt & decrypt locally with RSA1_5", async function() {
+  if (isNode) {
+    it("encrypt locally with RSA1_5", async function() {
+      const text = this.test!.title;
+      const encrypted = await localCryptoClient.encrypt(str2ab(text), "RSA1_5");
+      const decrypted = await localCryptoClient.decrypt(encrypted, "RSA1_5");
+      const decryptedText = ab2str(decrypted);
+      assert.equal(text, decryptedText);
+    });
+	}
+
+  it("encrypt remotely with RSA-OAEP", async function() {
     const text = this.test!.title;
-    const encrypted = await localCryptoClient.encrypt(str2ab(text), "RSA1_5");
-    const decrypted = await localCryptoClient.decrypt(encrypted, "RSA1_5");
+    const encrypted = await remoteCryptoClient.encrypt(str2ab(text), "RSA-OAEP");
+    const decrypted = await remoteCryptoClient.decrypt(encrypted, "RSA-OAEP");
     const decryptedText = ab2str(decrypted);
     assert.equal(text, decryptedText);
   });
+
+  if (isNode) {
+    it("encrypt locally with RSA-OAEP", async function() {
+      const text = this.test!.title;
+      const encrypted = await localCryptoClient.encrypt(str2ab(text), "RSA-OAEP");
+      const decrypted = await localCryptoClient.decrypt(encrypted, "RSA-OAEP");
+      const decryptedText = ab2str(decrypted);
+      assert.equal(text, decryptedText);
+    });
+	}
 });
