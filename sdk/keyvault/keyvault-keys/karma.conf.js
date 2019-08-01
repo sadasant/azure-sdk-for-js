@@ -114,7 +114,7 @@ module.exports = function(config) {
     browserDisconnectTolerance: 3,
     browserConsoleLogOptions: {
       // IMPORTANT: COMMENT the following line if you want to print debug logs in your browsers in record mode!!
-      terminal: process.env.TEST_MODE !== "record"
+      // terminal: process.env.TEST_MODE !== "record"
     },
 
     client: {
