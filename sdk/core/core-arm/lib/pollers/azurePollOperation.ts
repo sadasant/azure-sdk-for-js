@@ -130,35 +130,7 @@ async function cancel(
   this: AzureOperation,
   options: { abortSignal?: AbortSignal } = {}
 ): Promise<AzureOperation> {
-  const requestOptions = this.properties.requestOptions;
-  const abortSignal = options.abortSignal || (requestOptions && requestOptions.abortSignal);
-
-  if (abortSignal && abortSignal.aborted) {
-    // Simulating a try catch of an HTTP request that's given an aborted abortSignal.
-    return await this.update({
-      abortSignal
-    }); // This will throw
-  }
-
-  if (this.properties.unsupportedCancel) {
-    throw new Error("Cancellation not supported");
-  }
-
-  // Simulating the response of an HTTP Request
-  const response = {
-    status: 205
-  } as HttpOperationResponse;
-
-  return makeOperation(
-    {
-      ...this.state,
-      cancelled: true
-    },
-    {
-      ...this.properties,
-      previousResponse: response
-    }
-  );
+  throw new Error("Cancellation not supported");
 }
 
 function toString(this: AzureOperation): string {

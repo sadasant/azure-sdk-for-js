@@ -7,7 +7,7 @@ import { AzureOperation, AzureOperationProperties } from "./azurePollOperation";
 class AzureAsyncOperationLROPollStrategy extends Poller<AzureOperationProperties, HttpOperationResponse> {
   constructor(
     client: ServiceClient,
-    requestOptions?: RequestOptionsBase, // TODO: Do we need this?
+    requestOptions?: RequestOptionsBase,
     initialArguments?: OperationArguments,
     baseOperation?: AzureOperation,
     onProgress?: (properties: AzureOperationProperties) => void
