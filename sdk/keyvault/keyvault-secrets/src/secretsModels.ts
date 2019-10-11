@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import * as msRest from "@azure/core-http";
+import * as coreHttp from "@azure/core-http";
 import { DeletionRecoveryLevel } from "./core/models";
 import { ParsedKeyVaultEntityIdentifier } from "./core/keyVaultBase";
 
@@ -12,11 +12,11 @@ import { ParsedKeyVaultEntityIdentifier } from "./core/keyVaultBase";
 export interface SecretsClientInterface {
   deleteSecret(
     secretName: string,
-    options?: RequestOptionsBase
+    options?: coreHttp.RequestOptionsBase
   ): Promise<DeletedSecret>;
   getDeletedSecret(
     secretName: string,
-    options?: RequestOptionsBase
+    options?: coreHttp.RequestOptionsBase
   ): Promise<DeletedSecret>;
 } 
 
@@ -159,9 +159,9 @@ export interface SetSecretOptions {
    */
   expires?: Date;
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
@@ -192,9 +192,9 @@ export interface UpdateSecretOptions {
    */
   tags?: { [propertyName: string]: string };
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
@@ -208,9 +208,9 @@ export interface GetSecretOptions {
    */
   version?: string;
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
@@ -219,7 +219,7 @@ export interface GetSecretOptions {
  */
 export interface ListSecretsOptions {
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }

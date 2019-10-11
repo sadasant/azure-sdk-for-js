@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import * as msRest from "@azure/core-http";
+import * as coreHttp from "@azure/core-http";
 import { ParsedKeyVaultEntityIdentifier } from "./core/keyVaultBase";
 import { JsonWebKey, JsonWebKeyOperation, JsonWebKeyCurveName } from "./core/models";
 import { DeletionRecoveryLevel } from "./core/models";
@@ -11,8 +11,8 @@ import { DeletionRecoveryLevel } from "./core/models";
  * An interface representing a keys client.
  */
 export interface KeysClientInterface {
-  deleteKey(name: string, options?: RequestOptions): Promise<DeletedKey>;
-  getDeletedKey(name: string, options?: RequestOptions): Promise<DeletedKey>;
+  deleteKey(name: string, options?: coreHttp.RequestOptions): Promise<DeletedKey>;
+  getDeletedKey(name: string, options?: coreHttp.RequestOptions): Promise<DeletedKey>;
 } 
  
 /**
@@ -135,9 +135,9 @@ export interface CreateKeyOptions {
    */
   expires?: Date;
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
   keySize?: number;
 }
 
@@ -207,9 +207,9 @@ export interface ImportKeyOptions {
    */
   expires?: Date;
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
@@ -240,9 +240,9 @@ export interface UpdateKeyOptions {
    */
   tags?: { [propertyName: string]: string };
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
@@ -256,9 +256,9 @@ export interface GetKeyOptions {
    */
   version?: string;
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
@@ -267,9 +267,9 @@ export interface GetKeyOptions {
  */
 export interface ListKeysOptions {
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
@@ -278,7 +278,7 @@ export interface ListKeysOptions {
  */
 export interface RequestOptions {
   /**
-   * @member {msRest.RequestOptionsBase} [requestOptions] Options for this request
+   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
    */
-  requestOptions?: msRest.RequestOptionsBase;
+  requestOptions?: coreHttp.RequestOptionsBase;
 }
