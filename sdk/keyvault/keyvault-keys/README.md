@@ -252,6 +252,20 @@ Since the deletion of a key won't happen instantly, some time is needed
 after the `deleteKey` method is called before the deleted key is
 available to be read, recovered or purged.
 
+To wait until the key is deleted, you can use the `beginDeleteKey` method,
+which returns a Poller who manages the underlying Long Running Operation
+according to our guidelines:
+https://azure.github.io/azure-sdk/typescript_design.html#ts-lro
+
+Here's a quick example on how to use this method:
+
+```typescript
+const poller = await client.beginDeleteKey(keyName);
+
+const deletedKey = await poller.done();
+console.log(deletedKey);
+```
+
 ### Iterating lists of keys
 
 Using the KeysClient, you can retrieve and iterate through all of the
