@@ -8,6 +8,15 @@ import { DeletionRecoveryLevel } from "./core/models";
 
 /**
  * @interface
+ * An interface representing a keys client.
+ */
+export interface KeysClientInterface {
+  deleteKey(name: string, options?: RequestOptions): Promise<DeletedKey>;
+  getDeletedKey(name: string, options?: RequestOptions): Promise<DeletedKey>;
+} 
+ 
+/**
+ * @interface
  * An interface representing the complete key with value
  */
 export interface Key {

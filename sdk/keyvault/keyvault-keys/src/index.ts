@@ -29,6 +29,7 @@ import { PageSettings, PagedAsyncIterableIterator } from "@azure/core-paging";
 
 import { TelemetryOptions, ProxyOptions, RetryOptions } from "./core";
 import {
+  KeysClientInterface,
   KeyBundle,
   JsonWebKeyType,
   JsonWebKey,
@@ -51,6 +52,7 @@ import {
 import { KeyVaultClient } from "./core/keyVaultClient";
 import { RetryConstants, SDK_VERSION } from "./core/utils/constants";
 import { challengeBasedAuthenticationPolicy } from "./core/challengeBasedAuthenticationPolicy";
+import { DeleteKeyPoller } from "./lro/delete/poller";
 
 import {
   NewPipelineOptions,
@@ -125,7 +127,7 @@ export { ProxyOptions, TelemetryOptions, RetryOptions };
 /**
  * The client to interact with the KeyVault keys functionality
  */
-export class KeysClient {
+export class KeysClient implements KeysClientInterface {
   /**
    * A static method used to create a new Pipeline object with the provided Credential.
    *
@@ -503,6 +505,45 @@ export class KeysClient {
     }
 
     return this.getKeyFromKeyBundle(response);
+  }
+
+  /**
+   * Deletes a key through a Long Running Operation poller that allows you to wait indifinetly until the key is deleted.
+   *
+   * Example usage:
+   * ```ts
+   * const client = new KeysClient(url, credentials);
+   * const poller = await client.beginDeleteKey("MyKey");
+   *
+   * // Serializing the poller
+   * const serialized = poller.toJSON();
+   * // A new poller can be created with:
+   * // await client.beginDeleteKey("MyKey", {}, { resumeFrom: serialized });
+   *
+   * // Waiting until it's done
+   * const key = await poller.done();
+   * console.log(key);
+   * ```
+   * @summary Deletes a key through a Long Running Operation Poller
+   * @param name The name of the key
+   * @param [requestOptions] Optional parameters to the HTTP request
+   * @param [pollerOptions] Optional parameters to the creation of the poller
+   */
+  public async beginDeleteKey(
+    name: string,
+    requestOptions: RequestOptionsBase = {},
+    pollerOptions: {
+      manual?: boolean;
+      intervalInMs?: number;
+      resumeFrom?: string;
+    } = {}
+  ): Promise<DeleteKeyPoller> {
+    return new DeleteKeyPoller({
+      client: this,
+      name,
+      requestOptions,
+      ...pollerOptions
+    });
   }
 
   /**

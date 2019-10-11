@@ -27,6 +27,7 @@ import { getTracer, Span } from "@azure/core-tracing";
 import "@azure/core-paging";
 import { PageSettings, PagedAsyncIterableIterator } from "@azure/core-paging";
 import {
+  SecretClientsInterface,
   SecretBundle,
   DeletedSecretBundle,
   DeletionRecoveryLevel,
@@ -43,6 +44,7 @@ import {
 import { KeyVaultClient } from "./core/keyVaultClient";
 import { RetryConstants, SDK_VERSION } from "./core/utils/constants";
 import { challengeBasedAuthenticationPolicy } from "./core/challengeBasedAuthenticationPolicy";
+import { DeleteSecretPoller } from "./lro/delete/poller";
 
 import {
   Secret,
@@ -82,7 +84,7 @@ export { ProxyOptions, RetryOptions, TelemetryOptions };
 /**
  * The client to interact with the KeyVault secrets functionality
  */
-export class SecretsClient {
+export class SecretsClient implements SecretsClientInterface {
   /**
    * A static method used to create a new Pipeline object with the provided Credential.
    * @static
@@ -294,6 +296,45 @@ export class SecretsClient {
     }
 
     return this.getDeletedSecretFromDeletedSecretBundle(response);
+  }
+
+  /**
+   * Deletes a secret through a Long Running Operation poller that allows you to wait indifinetly until the secret is deleted.
+   *
+   * Example usage:
+   * ```ts
+   * const client = new SecretsClient(url, credentials);
+   * const poller = await client.beginDeleteSecret("MySecret");
+   *
+   * // Serializing the poller
+   * const serialized = poller.toJSON();
+   * // A new poller can be created with:
+   * // await client.beginDeleteSecret("MySecret", {}, { resumeFrom: serialized });
+   *
+   * // Waiting until it's done
+   * const secret = await poller.done();
+   * console.log(secret);
+   * ```
+   * @summary Deletes a secret through a Long Running Operation Poller
+   * @param name The name of the secret
+   * @param [requestOptions] Optional parameters to the HTTP request
+   * @param [pollerOptions] Optional parameters to the creation of the poller
+   */
+  public async beginDeleteSecret(
+    name: string,
+    requestOptions: RequestOptionsBase = {},
+    pollerOptions: {
+      manual?: boolean;
+      intervalInMs?: number;
+      resumeFrom?: string;
+    } = {}
+  ): Promise<DeleteSecretPoller> {
+    return new DeleteSecretPoller({
+      client: this,
+      name,
+      requestOptions,
+      ...pollerOptions
+    });
   }
 
   /**

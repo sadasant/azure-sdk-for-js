@@ -7,6 +7,21 @@ import { ParsedKeyVaultEntityIdentifier } from "./core/keyVaultBase";
 
 /**
  * @interface
+ * An interface representing a secrets client.
+ */
+export interface SecretsClientInterface {
+  deleteSecret(
+    secretName: string,
+    options?: RequestOptionsBase
+  ): Promise<DeletedSecret>;
+  getDeletedSecret(
+    secretName: string,
+    options?: RequestOptionsBase
+  ): Promise<DeletedSecret>;
+} 
+
+/**
+ * @interface
  * An interface representing the complete secret.
  */
 export interface Secret {

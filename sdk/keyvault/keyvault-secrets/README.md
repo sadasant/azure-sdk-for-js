@@ -228,6 +228,20 @@ Since the deletion of a secret won't happen instantly, some time is needed
 after the `deleteSecret` method is called before the deleted secret is
 available to be read, recovered or purged.
 
+To wait until the secret is deleted, you can use the `beginDeleteSecret` method,
+which returns a Poller who manages the underlying Long Running Operation
+according to our guidelines:
+https://azure.github.io/azure-sdk/typescript_design.html#ts-lro
+
+Here's a quick example on how to use this method:
+
+```typescript
+const poller = await client.beginDeleteSecret(secretName);
+
+const deletedSecret = await poller.done();
+console.log(deletedSecret);
+```
+ 
 ### Iterating lists of secrets
 
 Using the SecretsClient, you can retrieve and iterate through all of the
