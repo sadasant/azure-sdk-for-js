@@ -50,7 +50,7 @@ import { DeleteSecretPollOperationState } from "./lro/delete/operation";
 import { RecoverDeletedSecretPollOperationState } from "./lro/recover/operation";
 
 import {
-  Secret,
+  KeyVaultSecret,
   SecretClientInterface,
   SecretPollerOptions,
   DeletedSecret,
@@ -82,7 +82,7 @@ export {
   ParsedKeyVaultEntityIdentifier,
   PollerLike,
   PollOperationState,
-  Secret,
+  KeyVaultSecret,
   SecretProperties,
   SecretPollerOptions,
   SetSecretOptions,
@@ -247,7 +247,7 @@ export class SecretClient {
     secretName: string,
     value: string,
     options?: SetSecretOptions
-  ): Promise<Secret> {
+  ): Promise<KeyVaultSecret> {
     if (options) {
       const unflattenedProperties = {
         enabled: options.enabled,
@@ -347,7 +347,7 @@ export class SecretClient {
     secretName: string,
     secretVersion: string,
     options?: UpdateSecretOptions
-  ): Promise<Secret> {
+  ): Promise<KeyVaultSecret> {
     if (options) {
       const unflattenedProperties = {
         enabled: options.enabled,
@@ -404,7 +404,7 @@ export class SecretClient {
    * @param secretName The name of the secret.
    * @param [options] The optional parameters
    */
-  public async getSecret(secretName: string, options?: GetSecretOptions): Promise<Secret> {
+  public async getSecret(secretName: string, options?: GetSecretOptions): Promise<KeyVaultSecret> {
     const span = this.createSpan("getSecret", options && options.requestOptions);
     const requestOptions = this.setParentSpan(span, options && options.requestOptions);
 
@@ -582,7 +582,7 @@ export class SecretClient {
   public async restoreSecret(
     secretBundleBackup: Uint8Array,
     options?: RequestOptionsBase
-  ): Promise<Secret> {
+  ): Promise<KeyVaultSecret> {
     const span = this.createSpan("restoreSecret", options);
 
     let response: RestoreSecretResponse;
@@ -901,7 +901,7 @@ export class SecretClient {
     };
   }
 
-  private getSecretFromSecretBundle(secretBundle: SecretBundle | DeletedSecretBundle): Secret {
+  private getSecretFromSecretBundle(secretBundle: SecretBundle | DeletedSecretBundle): KeyVaultSecret {
     const parsedId = parseKeyvaultEntityIdentifier("secrets", secretBundle.id);
 
     let resultObject;
