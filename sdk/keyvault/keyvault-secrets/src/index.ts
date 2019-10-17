@@ -53,9 +53,9 @@ import { RecoverDeletedSecretPollOperationState } from "./lro/recover/operation"
 
 import {
   KeyVaultSecret,
+  DeletedSecret,
   SecretClientInterface,
   SecretPollerOptions,
-  DeletedSecret,
   SetSecretOptions,
   UpdateSecretOptions,
   GetSecretOptions,
@@ -263,7 +263,7 @@ export class SecretClient {
       const unflattenedProperties = {
         enabled: options.enabled,
         notBefore: options.notBefore,
-        expires: options.expires
+        expires: options.expiresOn
       };
       const unflattenedOptions = {
         ...options,
@@ -272,7 +272,7 @@ export class SecretClient {
       };
       delete unflattenedOptions.enabled;
       delete unflattenedOptions.notBefore;
-      delete unflattenedOptions.expires;
+      delete unflattenedOptions.expiresOn;
       delete unflattenedOptions.requestOptions;
 
       const span = this.createSpan("setSecret", unflattenedOptions);
@@ -363,7 +363,7 @@ export class SecretClient {
       const unflattenedProperties = {
         enabled: options.enabled,
         notBefore: options.notBefore,
-        expires: options.expires
+        expires: options.expiresOn
       };
       const unflattenedOptions = {
         ...options,
@@ -372,7 +372,7 @@ export class SecretClient {
       };
       delete unflattenedOptions.enabled;
       delete unflattenedOptions.notBefore;
-      delete unflattenedOptions.expires;
+      delete unflattenedOptions.expiresOn;
       delete unflattenedOptions.requestOptions;
 
       const span = this.createSpan("updateSecretProperties", unflattenedOptions);
@@ -912,28 +912,43 @@ export class SecretClient {
     };
   }
 
-  private getSecretFromSecretBundle(secretBundle: SecretBundle | DeletedSecretBundle): KeyVaultSecret {
+  private getSecretFromSecretBundle(bundle: SecretBundle | DeletedSecretBundle): KeyVaultSecret {
+    const secretBundle = bundle as SecretBundle;
+    const deletedSecretBundle = bundle as DeletedSecretBundle;
     const parsedId = parseKeyvaultEntityIdentifier("secrets", secretBundle.id);
 
-    let resultObject;
-    if (secretBundle.attributes) {
-      resultObject = {
-        value: secretBundle.value,
-        properties: {
-          ...secretBundle,
-          ...parsedId,
-          ...secretBundle.attributes
-        }
-      };
-      delete resultObject.properties.attributes;
-    } else {
-      resultObject = {
-        value: secretBundle.value,
-        properties: {
-          ...secretBundle,
-          ...parsedId
-        }
-      };
+    const attributes = secretBundle.attributes;
+    delete secretBundle.attributes;
+
+    let resultObject: KeyVaultSecret & DeletedSecret = {
+      value: secretBundle.value,
+      properties: {
+        ...secretBundle,
+        ...parsedId,
+        ...attributes
+      }
+    }
+
+    if (deletedSecretBundle.deletedDate) {
+      resultObject.properties.deletedOn = deletedSecretBundle.deletedDate;
+      delete (resultObject.properties as any).deletedDate;
+    }
+
+    if (attributes) {
+      if (attributes.expires) {
+        resultObject.properties.expiresOn = attributes.expires;
+        delete (resultObject.properties as any).expires;
+      }
+
+      if (attributes.created) {
+        resultObject.properties.createdOn = attributes.created;
+        delete (resultObject.properties as any).created;
+      }
+ 
+      if (attributes.updated) {
+        resultObject.properties.updatedOn = attributes.updated;
+        delete (resultObject.properties as any).updated;
+      }
     }
 
     return resultObject;
