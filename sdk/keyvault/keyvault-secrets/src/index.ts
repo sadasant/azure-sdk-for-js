@@ -713,7 +713,10 @@ export class SecretClient {
     secretName: string,
     options?: ListOperationOptions
   ): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]> {
-    const span = this.createSpan("listPropertiesOfSecretVersions", options && options.requestOptions);
+    const span = this.createSpan(
+      "listPropertiesOfSecretVersions",
+      options && options.requestOptions
+    );
     const updatedOptions: ListOperationOptions = {
       ...options,
       requestOptions: this.setParentSpan(span, options && options.requestOptions)
@@ -767,7 +770,9 @@ export class SecretClient {
     }
   }
 
-  private async *listSecretsAll(options?: ListOperationOptions): AsyncIterableIterator<SecretProperties> {
+  private async *listSecretsAll(
+    options?: ListOperationOptions
+  ): AsyncIterableIterator<SecretProperties> {
     const f = {};
 
     for await (const page of this.listSecretsPage(f, options)) {
@@ -916,7 +921,7 @@ export class SecretClient {
         ...parsedId,
         ...attributes
       }
-    }
+    };
 
     if (deletedSecretBundle.deletedDate) {
       resultObject.properties.deletedOn = deletedSecretBundle.deletedDate;
@@ -933,7 +938,7 @@ export class SecretClient {
         resultObject.properties.createdOn = attributes.created;
         delete (resultObject.properties as any).created;
       }
- 
+
       if (attributes.updated) {
         resultObject.properties.updatedOn = attributes.updated;
         delete (resultObject.properties as any).updated;
