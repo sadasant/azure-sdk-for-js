@@ -19,8 +19,8 @@ import { TokenCredential } from '@azure/core-http';
 export interface DeletedSecret {
     properties: SecretProperties & {
         recoveryId?: string;
-        readonly scheduledPurgeDate?: Date;
-        readonly deletedDate?: Date;
+        scheduledPurgeDate?: Date;
+        deletedOn?: Date;
     };
     value?: string;
 }
@@ -44,6 +44,12 @@ export type DeletionRecoveryLevel = "Purgeable" | "Recoverable+Purgeable" | "Rec
 export interface GetSecretOptions {
     requestOptions?: coreHttp.RequestOptionsBase;
     version?: string;
+}
+
+// @public
+export interface KeyVaultSecret {
+    properties: SecretProperties;
+    value?: string;
 }
 
 // @public
@@ -103,12 +109,6 @@ export interface RetryOptions {
 }
 
 // @public
-export interface Secret {
-    properties: SecretProperties;
-    value?: string;
-}
-
-// @public
 export class SecretClient {
     constructor(endPoint: string, credential: TokenCredential, pipelineOrOptions?: ServiceClientOptions | NewPipelineOptions);
     backupSecret(secretName: string, options?: RequestOptionsBase): Promise<Uint8Array | undefined>;
@@ -117,15 +117,15 @@ export class SecretClient {
     protected readonly credential: TokenCredential;
     static getDefaultPipeline(credential: TokenCredential, pipelineOptions?: NewPipelineOptions): ServiceClientOptions;
     getDeletedSecret(secretName: string, options?: RequestOptionsBase): Promise<DeletedSecret>;
-    getSecret(secretName: string, options?: GetSecretOptions): Promise<Secret>;
+    getSecret(secretName: string, options?: GetSecretOptions): Promise<KeyVaultSecret>;
     listDeletedSecrets(options?: RequestOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
     listSecrets(options?: RequestOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
     listSecretVersions(secretName: string, options?: RequestOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
     readonly pipeline: ServiceClientOptions;
     purgeDeletedSecret(secretName: string, options?: RequestOptionsBase): Promise<void>;
-    restoreSecret(secretBundleBackup: Uint8Array, options?: RequestOptionsBase): Promise<Secret>;
-    setSecret(secretName: string, value: string, options?: SetSecretOptions): Promise<Secret>;
-    updateSecretProperties(secretName: string, secretVersion: string, options?: UpdateSecretOptions): Promise<Secret>;
+    restoreSecret(secretBundleBackup: Uint8Array, options?: RequestOptionsBase): Promise<KeyVaultSecret>;
+    setSecret(secretName: string, value: string, options?: SetSecretOptions): Promise<KeyVaultSecret>;
+    updateSecretProperties(secretName: string, secretVersion: string, options?: UpdateSecretOptions): Promise<KeyVaultSecret>;
     readonly vaultEndpoint: string;
 }
 
@@ -139,9 +139,9 @@ export interface SecretPollerOptions {
 // @public
 export interface SecretProperties extends ParsedKeyVaultEntityIdentifier {
     contentType?: string;
-    readonly created?: Date;
+    createdOn?: Date;
     enabled?: boolean;
-    expires?: Date;
+    expiresOn?: Date;
     id?: string;
     readonly keyId?: URL;
     readonly managed?: boolean;
@@ -150,14 +150,14 @@ export interface SecretProperties extends ParsedKeyVaultEntityIdentifier {
     tags?: {
         [propertyName: string]: string;
     };
-    readonly updated?: Date;
+    updatedOn?: Date;
 }
 
 // @public
 export interface SetSecretOptions {
     contentType?: string;
     enabled?: boolean;
-    expires?: Date;
+    expiresOn?: Date;
     notBefore?: Date;
     requestOptions?: coreHttp.RequestOptionsBase;
     tags?: {
@@ -175,7 +175,7 @@ export interface TelemetryOptions {
 export interface UpdateSecretOptions {
     contentType?: string;
     enabled?: boolean;
-    expires?: Date;
+    expiresOn?: Date;
     notBefore?: Date;
     requestOptions?: coreHttp.RequestOptionsBase;
     tags?: {
