@@ -17,6 +17,11 @@ import { ServiceClientOptions } from '@azure/core-http';
 import { TokenCredential } from '@azure/core-http';
 
 // @public
+export interface BackupKeyOptions {
+    requestOptions?: coreHttp.RequestOptionsBase;
+}
+
+// @public
 export interface CreateEcKeyOptions extends CreateKeyOptions {
     curve?: JsonWebKeyCurveName;
     hsm?: boolean;
@@ -67,8 +72,10 @@ export class CryptographyClient {
     wrapKey(algorithm: KeyWrapAlgorithm, key: Uint8Array, options?: WrapOptions): Promise<WrapResult>;
 }
 
+// Warning: (ae-forgotten-export) The symbol "CryptographyOptions" needs to be exported by the entry point index.d.ts
+// 
 // @public
-export interface DecryptOptions extends RequestOptions {
+export interface DecryptOptions extends CryptographyOptions {
 }
 
 // @public
@@ -89,6 +96,11 @@ export interface DeletedKey {
 }
 
 // @public
+export interface DeletedKeyOptions {
+    requestOptions?: coreHttp.RequestOptionsBase;
+}
+
+// @public
 export interface DeleteKeyPollOperationState extends PollOperationState<DeletedKey> {
     // Warning: (ae-forgotten-export) The symbol "KeyClientInterface" needs to be exported by the entry point index.d.ts
     // 
@@ -104,7 +116,7 @@ export interface DeleteKeyPollOperationState extends PollOperationState<DeletedK
 export type DeletionRecoveryLevel = "Purgeable" | "Recoverable+Purgeable" | "Recoverable" | "Recoverable+ProtectedSubscription";
 
 // @public
-export interface EncryptOptions extends RequestOptions {
+export interface EncryptOptions extends CryptographyOptions {
 }
 
 // @public
@@ -173,7 +185,7 @@ export type JsonWebKeyType = "EC" | "EC-HSM" | "RSA" | "RSA-HSM" | "oct";
 // @public
 export class KeyClient {
     constructor(endPoint: string, credential: TokenCredential, pipelineOrOptions?: ServiceClientOptions | NewPipelineOptions);
-    backupKey(name: string, options?: RequestOptions): Promise<Uint8Array | undefined>;
+    backupKey(name: string, options?: BackupKeyOptions): Promise<Uint8Array | undefined>;
     beginDeleteKey(name: string, options?: KeyPollerOptions): Promise<PollerLike<PollOperationState<DeletedKey>, DeletedKey>>;
     beginRecoverDeletedKey(name: string, options?: KeyPollerOptions): Promise<PollerLike<PollOperationState<DeletedKey>, DeletedKey>>;
     createEcKey(name: string, options?: CreateEcKeyOptions): Promise<KeyVaultKey>;
@@ -181,15 +193,15 @@ export class KeyClient {
     createRsaKey(name: string, options?: CreateRsaKeyOptions): Promise<KeyVaultKey>;
     protected readonly credential: TokenCredential;
     static getDefaultPipeline(credential: TokenCredential, pipelineOptions?: NewPipelineOptions): ServiceClientOptions;
-    getDeletedKey(name: string, options?: RequestOptions): Promise<DeletedKey>;
+    getDeletedKey(name: string, options?: DeletedKeyOptions): Promise<DeletedKey>;
     getKey(name: string, options?: GetKeyOptions): Promise<KeyVaultKey>;
     importKey(name: string, key: JsonWebKey, options: ImportKeyOptions): Promise<KeyVaultKey>;
-    listDeletedKeys(options?: GetKeysOptions): PagedAsyncIterableIterator<KeyProperties, KeyProperties[]>;
-    listKeys(options?: GetKeysOptions): PagedAsyncIterableIterator<KeyProperties, KeyProperties[]>;
-    listKeyVersions(name: string, options?: GetKeysOptions): PagedAsyncIterableIterator<KeyProperties, KeyProperties[]>;
+    listDeletedKeys(options?: GetKeysOptions): PagedAsyncIterableIterator<DeletedKey, DeletedKey[]>;
+    listPropertiesOfKeys(options?: GetKeysOptions): PagedAsyncIterableIterator<KeyProperties, KeyProperties[]>;
+    listPropertiesOfKeyVersions(name: string, options?: GetKeysOptions): PagedAsyncIterableIterator<KeyProperties, KeyProperties[]>;
     readonly pipeline: ServiceClientOptions;
-    purgeDeletedKey(name: string, options?: RequestOptions): Promise<void>;
-    restoreKeyBackup(backup: Uint8Array, options?: RequestOptions): Promise<KeyVaultKey>;
+    purgeDeletedKey(name: string, options?: DeletedKeyOptions): Promise<void>;
+    restoreKeyBackup(backup: Uint8Array, options?: BackupKeyOptions): Promise<KeyVaultKey>;
     updateKey(name: string, keyVersion: string, options?: UpdateKeyOptions): Promise<KeyVaultKey>;
     readonly vaultEndpoint: string;
 }
@@ -268,11 +280,6 @@ export interface RecoverDeletedKeyPollOperationState extends PollOperationState<
     name: string;
     // (undocumented)
     requestOptions?: RequestOptionsBase;
-}
-
-// @public
-export interface RequestOptions {
-    requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 // @public
