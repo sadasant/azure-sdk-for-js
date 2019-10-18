@@ -53,6 +53,11 @@ export interface KeyVaultSecret {
 }
 
 // @public
+export interface ListOperationOptions {
+    requestOptions?: coreHttp.RequestOptionsBase;
+}
+
+// @public
 export interface NewPipelineOptions {
     // (undocumented)
     HTTPClient?: HttpClient;
@@ -97,11 +102,6 @@ export interface RecoverDeletedSecretPollOperationState extends PollOperationSta
 }
 
 // @public
-export interface RequestOptions {
-    requestOptions?: coreHttp.RequestOptionsBase;
-}
-
-// @public
 export interface RetryOptions {
     readonly maxRetryDelayInMs?: number;
     readonly retryCount?: number;
@@ -118,14 +118,14 @@ export class SecretClient {
     static getDefaultPipeline(credential: TokenCredential, pipelineOptions?: NewPipelineOptions): ServiceClientOptions;
     getDeletedSecret(secretName: string, options?: RequestOptionsBase): Promise<DeletedSecret>;
     getSecret(secretName: string, options?: GetSecretOptions): Promise<KeyVaultSecret>;
-    listDeletedSecrets(options?: RequestOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
-    listSecrets(options?: RequestOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
-    listSecretVersions(secretName: string, options?: RequestOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
+    listDeletedSecrets(options?: ListOperationOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
+    listPropertiesOfSecretVersions(secretName: string, options?: ListOperationOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
+    listSecrets(options?: ListOperationOptions): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]>;
     readonly pipeline: ServiceClientOptions;
     purgeDeletedSecret(secretName: string, options?: RequestOptionsBase): Promise<void>;
-    restoreSecret(secretBundleBackup: Uint8Array, options?: RequestOptionsBase): Promise<KeyVaultSecret>;
+    restoreSecret(secretBundleBackup: Uint8Array, options?: RequestOptionsBase): Promise<SecretProperties>;
     setSecret(secretName: string, value: string, options?: SetSecretOptions): Promise<KeyVaultSecret>;
-    updateSecretProperties(secretName: string, secretVersion: string, options?: UpdateSecretOptions): Promise<KeyVaultSecret>;
+    updateSecretProperties(secretName: string, secretVersion: string, options?: UpdateSecretOptions): Promise<SecretProperties>;
     readonly vaultEndpoint: string;
 }
 
