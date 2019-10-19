@@ -59,7 +59,10 @@ import {
   SetSecretOptions,
   UpdateSecretOptions,
   GetSecretOptions,
-  ListOperationOptions,
+  GetDeletedSecretOptions,
+  ListDeletedSecretsOptions,
+  ListPropertiesOfSecretVersionsOptions,
+  ListPropertiesOfSecretsOptions,
   SecretProperties
 } from "./secretsModels";
 import { parseKeyvaultIdentifier as parseKeyvaultEntityIdentifier } from "./core/utils";
@@ -77,7 +80,10 @@ export {
   DeletedSecret,
   DeletionRecoveryLevel,
   GetSecretOptions,
-  ListOperationOptions,
+  GetDeletedSecretOptions,
+  ListDeletedSecretsOptions,
+  ListPropertiesOfSecretVersionsOptions,
+  ListPropertiesOfSecretsOptions,
   NewPipelineOptions,
   PagedAsyncIterableIterator,
   PageSettings,
@@ -656,12 +662,12 @@ export class SecretClient {
   private async *listPropertiesOfSecretVersionsPage(
     secretName: string,
     continuationState: PageSettings,
-    options?: ListOperationOptions
+    options?: RequestOptionsBase
   ): AsyncIterableIterator<SecretProperties[]> {
     if (continuationState.continuationToken == null) {
       const optionsComplete: KeyVaultClientGetSecretsOptionalParams = {
         maxresults: continuationState.maxPageSize,
-        ...(options && options.requestOptions ? options.requestOptions : {})
+        ...options,
       };
       const currentSetResponse = await this.client.getSecretVersions(
         this.vaultEndpoint,
@@ -694,7 +700,7 @@ export class SecretClient {
 
   private async *listPropertiesOfSecretVersionsAll(
     secretName: string,
-    options?: ListOperationOptions
+    options?: RequestOptionsBase
   ): AsyncIterableIterator<SecretProperties> {
     const f = {};
 
@@ -722,15 +728,15 @@ export class SecretClient {
    */
   public listPropertiesOfSecretVersions(
     secretName: string,
-    options?: ListOperationOptions
+    options?: ListPropertiesOfSecretVersionsOptions
   ): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]> {
     const span = this.createSpan(
       "listPropertiesOfSecretVersions",
-      options && options.requestOptions
+      options
     );
     const updatedOptions: ListOperationOptions = {
       ...options,
-      requestOptions: this.setParentSpan(span, options && options.requestOptions)
+      requestOptions: this.setParentSpan(span, options)
     };
 
     const iter = this.listPropertiesOfSecretVersionsAll(secretName, updatedOptions);
@@ -750,12 +756,12 @@ export class SecretClient {
 
   private async *listPropertiesOfSecretsPage(
     continuationState: PageSettings,
-    options?: ListOperationOptions
+    options?: RequestOptionsBase
   ): AsyncIterableIterator<SecretProperties[]> {
     if (continuationState.continuationToken == null) {
       const optionsComplete: KeyVaultClientGetSecretsOptionalParams = {
         maxresults: continuationState.maxPageSize,
-        ...(options && options.requestOptions ? options.requestOptions : {})
+        ...options,
       };
       const currentSetResponse = await this.client.getSecrets(this.vaultEndpoint, optionsComplete);
       continuationState.continuationToken = currentSetResponse.nextLink;
@@ -782,7 +788,7 @@ export class SecretClient {
   }
 
   private async *listPropertiesOfSecretsAll(
-    options?: ListOperationOptions
+    options?: RequestOptionsBase
   ): AsyncIterableIterator<SecretProperties> {
     const f = {};
 
@@ -809,12 +815,12 @@ export class SecretClient {
    * @param [options] The optional parameters
    */
   public listPropertiesOfSecrets(
-    options?: ListOperationOptions
+    options?: ListPropertiesOfSecretsOptions
   ): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]> {
-    const span = this.createSpan("listPropertiesOfSecrets", options && options.requestOptions);
+    const span = this.createSpan("listPropertiesOfSecrets", options);
     const updatedOptions: ListOperationOptions = {
       ...options,
-      requestOptions: this.setParentSpan(span, options && options.requestOptions)
+      ...this.setParentSpan(span, options)
     };
 
     const iter = this.listPropertiesOfSecretsAll(updatedOptions);
@@ -833,12 +839,12 @@ export class SecretClient {
 
   private async *listDeletedSecretsPage(
     continuationState: PageSettings,
-    options?: ListOperationOptions
+    options?: RequestOptionsBase
   ): AsyncIterableIterator<DeletedSecret[]> {
     if (continuationState.continuationToken == null) {
       const optionsComplete: KeyVaultClientGetSecretsOptionalParams = {
         maxresults: continuationState.maxPageSize,
-        ...(options && options.requestOptions ? options.requestOptions : {})
+        ...options,
       };
       const currentSetResponse = await this.client.getDeletedSecrets(
         this.vaultEndpoint,
@@ -868,7 +874,7 @@ export class SecretClient {
   }
 
   private async *listDeletedSecretsAll(
-    options?: ListOperationOptions
+    options?: RequestOptionsBase
   ): AsyncIterableIterator<DeletedSecret> {
     const f = {};
 
@@ -895,12 +901,12 @@ export class SecretClient {
    * @param [options] The optional parameters
    */
   public listDeletedSecrets(
-    options?: ListOperationOptions
+    options?: ListDeletedSecretsOptions
   ): PagedAsyncIterableIterator<DeletedSecret, DeletedSecret[]> {
-    const span = this.createSpan("listDeletedSecrets", options && options.requestOptions);
-    const updatedOptions: ListOperationOptions = {
+    const span = this.createSpan("listDeletedSecrets", options);
+    const updatedOptions: ListDeletedSecretsOptions = {
       ...options,
-      requestOptions: this.setParentSpan(span, options && options.requestOptions)
+      ...this.setParentSpan(span, options)
     };
 
     const iter = this.listDeletedSecretsAll(updatedOptions);

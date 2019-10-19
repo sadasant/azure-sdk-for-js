@@ -147,11 +147,7 @@ export interface DeletedSecret {
  * An interface representing the optional parameters that can be
  * passed to beginDeleteSecret
  */
-export interface SecretPollerOptions {
-  /**
-   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
-   */
-  requestOptions?: coreHttp.RequestOptionsBase;
+export interface SecretPollerOptions extends RequestOptionsBase {
   /**
    * @member {number} [intervalInMs] Time between each polling
    */
@@ -166,7 +162,7 @@ export interface SecretPollerOptions {
  * @interface
  * An interface representing the optional parameters that can be passed to setSecret.
  */
-export interface SetSecretOptions {
+export interface SetSecretOptions extends RequestOptionsBase {
   /**
    * @member {{ [propertyName: string]: string }} [tags] Application specific
    * metadata in the form of key-value pairs.
@@ -189,17 +185,13 @@ export interface SetSecretOptions {
    * @member {Date} [expiresOn] Expiry date in UTC.
    */
   expiresOn?: Date;
-  /**
-   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
-   */
-  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
  * @interface
  * An interface representing the optional parameters that can be passed to updateSecret.
  */
-export interface UpdateSecretOptions {
+export interface UpdateSecretOptions extends RequestOptionsBase {
   /**
    * @member {string} [contentType] Type of the secret value such as a
    * password.
@@ -222,35 +214,40 @@ export interface UpdateSecretOptions {
    * metadata in the form of key-value pairs.
    */
   tags?: { [propertyName: string]: string };
-  /**
-   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
-   */
-  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
  * @interface
  * An interface representing the optional parameters that can be passed to getSecret.
  */
-export interface GetSecretOptions {
+export interface GetSecretOptions extends RequestOptionsBase {
   /**
    * @member {string} [version] The version of the secret to retrieve.  If not
    * specified the latest version of the secret will be retrieved.
    */
   version?: string;
-  /**
-   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
-   */
-  requestOptions?: coreHttp.RequestOptionsBase;
 }
 
 /**
  * @interface
- * An interface representing optional parameters for SecretClient paged operations.
+ * An interface representing the optional parameters that can be passed to getDeletedSecret.
  */
-export interface ListOperationOptions {
-  /**
-   * @member {coreHttp.RequestOptionsBase} [requestOptions] Options for this request
-   */
-  requestOptions?: coreHttp.RequestOptionsBase;
-}
+export interface GetDeletedSecretOptions extends RequestOptionsBase {}
+
+/**
+ * @interface
+ * An interface representing optional parameters for listDeletedSecrets
+ */
+export interface ListDeletedSecretsOptions extends RequestOptionsBase {}
+
+/**
+ * @interface
+ * An interface representing optional parameters for listPropertiesOfSecretVersions
+ */
+export interface ListPropertiesOfSecretVersionsOptions extends RequestOptionsBase {}
+
+/**
+ * @interface
+ * An interface representing optional parameters for listPropertiesOfSecrets
+ */
+export interface ListPropertiesOfSecretsOptions extends RequestOptionsBase {}
