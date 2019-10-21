@@ -149,13 +149,12 @@ export class SecretClient {
       isTokenCredential(credential)
         ? challengeBasedAuthenticationPolicy(credential)
         : signingPolicy(credential),
-      logPolicy(
-        logger.info, {
-          allowedHeaderNames: [
-            "x-ms-keyvault-region",
-            "x-ms-keyvault-network-info",
-            "x-ms-keyvault-service-version"
-          ]
+      logPolicy(logger.info, {
+        allowedHeaderNames: [
+          "x-ms-keyvault-region",
+          "x-ms-keyvault-network-info",
+          "x-ms-keyvault-service-version"
+        ]
       })
     ]);
 
@@ -667,7 +666,7 @@ export class SecretClient {
     if (continuationState.continuationToken == null) {
       const optionsComplete: KeyVaultClientGetSecretsOptionalParams = {
         maxresults: continuationState.maxPageSize,
-        ...options,
+        ...options
       };
       const currentSetResponse = await this.client.getSecretVersions(
         this.vaultEndpoint,
@@ -730,10 +729,7 @@ export class SecretClient {
     secretName: string,
     options?: ListPropertiesOfSecretVersionsOptions
   ): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]> {
-    const span = this.createSpan(
-      "listPropertiesOfSecretVersions",
-      options
-    );
+    const span = this.createSpan("listPropertiesOfSecretVersions", options);
     const updatedOptions: RequestOptionsBase = {
       ...options,
       ...this.setParentSpan(span, options)
@@ -761,7 +757,7 @@ export class SecretClient {
     if (continuationState.continuationToken == null) {
       const optionsComplete: KeyVaultClientGetSecretsOptionalParams = {
         maxresults: continuationState.maxPageSize,
-        ...options,
+        ...options
       };
       const currentSetResponse = await this.client.getSecrets(this.vaultEndpoint, optionsComplete);
       continuationState.continuationToken = currentSetResponse.nextLink;
@@ -833,7 +829,8 @@ export class SecretClient {
       [Symbol.asyncIterator]() {
         return this;
       },
-      byPage: (settings: PageSettings = {}) => this.listPropertiesOfSecretsPage(settings, updatedOptions)
+      byPage: (settings: PageSettings = {}) =>
+        this.listPropertiesOfSecretsPage(settings, updatedOptions)
     };
   }
 
@@ -844,7 +841,7 @@ export class SecretClient {
     if (continuationState.continuationToken == null) {
       const optionsComplete: KeyVaultClientGetSecretsOptionalParams = {
         maxresults: continuationState.maxPageSize,
-        ...options,
+        ...options
       };
       const currentSetResponse = await this.client.getDeletedSecrets(
         this.vaultEndpoint,
@@ -852,9 +849,7 @@ export class SecretClient {
       );
       continuationState.continuationToken = currentSetResponse.nextLink;
       if (currentSetResponse.value) {
-        yield currentSetResponse.value.map(
-          (bundle) => this.getSecretFromSecretBundle(bundle)
-        );
+        yield currentSetResponse.value.map((bundle) => this.getSecretFromSecretBundle(bundle));
       }
     }
     while (continuationState.continuationToken) {
@@ -864,9 +859,7 @@ export class SecretClient {
       );
       continuationState.continuationToken = currentSetResponse.nextLink;
       if (currentSetResponse.value) {
-        yield currentSetResponse.value.map(
-          (bundle) => this.getSecretFromSecretBundle(bundle)
-        );
+        yield currentSetResponse.value.map((bundle) => this.getSecretFromSecretBundle(bundle));
       } else {
         break;
       }
@@ -934,6 +927,9 @@ export class SecretClient {
     let resultObject: KeyVaultSecret & DeletedSecret = {
       value: secretBundle.value,
       properties: {
+        expiresOn: attributes!.expires,
+        createdOn: attributes!.created,
+        updatedOn: attributes!.updated,
         ...secretBundle,
         ...parsedId,
         ...attributes
@@ -947,17 +943,14 @@ export class SecretClient {
 
     if (attributes) {
       if (attributes.expires) {
-        resultObject.properties.expiresOn = attributes.expires;
         delete (resultObject.properties as any).expires;
       }
 
       if (attributes.created) {
-        resultObject.properties.createdOn = attributes.created;
         delete (resultObject.properties as any).created;
       }
 
       if (attributes.updated) {
-        resultObject.properties.updatedOn = attributes.updated;
         delete (resultObject.properties as any).updated;
       }
     }

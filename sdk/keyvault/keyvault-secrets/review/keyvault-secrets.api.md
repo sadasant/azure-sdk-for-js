@@ -151,7 +151,7 @@ export interface SecretPollerOptions extends coreHttp.RequestOptionsBase {
 // @public
 export interface SecretProperties extends ParsedKeyVaultEntityIdentifier {
     contentType?: string;
-    createdOn?: Date;
+    readonly createdOn?: Date;
     enabled?: boolean;
     expiresOn?: Date;
     id?: string;
@@ -162,7 +162,7 @@ export interface SecretProperties extends ParsedKeyVaultEntityIdentifier {
     tags?: {
         [propertyName: string]: string;
     };
-    updatedOn?: Date;
+    readonly updatedOn?: Date;
 }
 
 // @public

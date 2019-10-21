@@ -87,13 +87,13 @@ export interface SecretProperties extends ParsedKeyVaultEntityIdentifier {
    * **NOTE: This property will not be serialized. It can only be populated by
    * the server.**
    */
-  createdOn?: Date;
+  readonly createdOn?: Date;
   /**
    * @member {Date} [updated] Last updated time in UTC.
    * **NOTE: This property will not be serialized. It can only be populated by
    * the server.**
    */
-  updatedOn?: Date;
+  readonly updatedOn?: Date;
   /**
    * @member {DeletionRecoveryLevel} [recoveryLevel] Reflects the deletion
    * recovery level currently in effect for keys in the current vault. If it
