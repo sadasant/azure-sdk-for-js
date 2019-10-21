@@ -734,9 +734,9 @@ export class SecretClient {
       "listPropertiesOfSecretVersions",
       options
     );
-    const updatedOptions: ListOperationOptions = {
+    const updatedOptions: RequestOptionsBase = {
       ...options,
-      requestOptions: this.setParentSpan(span, options)
+      ...this.setParentSpan(span, options)
     };
 
     const iter = this.listPropertiesOfSecretVersionsAll(secretName, updatedOptions);
@@ -818,7 +818,7 @@ export class SecretClient {
     options?: ListPropertiesOfSecretsOptions
   ): PagedAsyncIterableIterator<SecretProperties, SecretProperties[]> {
     const span = this.createSpan("listPropertiesOfSecrets", options);
-    const updatedOptions: ListOperationOptions = {
+    const updatedOptions: RequestOptionsBase = {
       ...options,
       ...this.setParentSpan(span, options)
     };

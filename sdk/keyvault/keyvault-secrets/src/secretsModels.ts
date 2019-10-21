@@ -147,7 +147,7 @@ export interface DeletedSecret {
  * An interface representing the optional parameters that can be
  * passed to beginDeleteSecret
  */
-export interface SecretPollerOptions extends RequestOptionsBase {
+export interface SecretPollerOptions extends coreHttp.RequestOptionsBase {
   /**
    * @member {number} [intervalInMs] Time between each polling
    */
@@ -162,7 +162,7 @@ export interface SecretPollerOptions extends RequestOptionsBase {
  * @interface
  * An interface representing the optional parameters that can be passed to setSecret.
  */
-export interface SetSecretOptions extends RequestOptionsBase {
+export interface SetSecretOptions extends coreHttp.RequestOptionsBase {
   /**
    * @member {{ [propertyName: string]: string }} [tags] Application specific
    * metadata in the form of key-value pairs.
@@ -191,7 +191,7 @@ export interface SetSecretOptions extends RequestOptionsBase {
  * @interface
  * An interface representing the optional parameters that can be passed to updateSecret.
  */
-export interface UpdateSecretOptions extends RequestOptionsBase {
+export interface UpdateSecretOptions extends coreHttp.RequestOptionsBase {
   /**
    * @member {string} [contentType] Type of the secret value such as a
    * password.
@@ -220,7 +220,7 @@ export interface UpdateSecretOptions extends RequestOptionsBase {
  * @interface
  * An interface representing the optional parameters that can be passed to getSecret.
  */
-export interface GetSecretOptions extends RequestOptionsBase {
+export interface GetSecretOptions extends coreHttp.RequestOptionsBase {
   /**
    * @member {string} [version] The version of the secret to retrieve.  If not
    * specified the latest version of the secret will be retrieved.
@@ -232,22 +232,22 @@ export interface GetSecretOptions extends RequestOptionsBase {
  * @interface
  * An interface representing the optional parameters that can be passed to getDeletedSecret.
  */
-export interface GetDeletedSecretOptions extends RequestOptionsBase {}
+export interface GetDeletedSecretOptions extends coreHttp.RequestOptionsBase {}
 
 /**
  * @interface
  * An interface representing optional parameters for listDeletedSecrets
  */
-export interface ListDeletedSecretsOptions extends RequestOptionsBase {}
+export interface ListDeletedSecretsOptions extends coreHttp.RequestOptionsBase {}
 
 /**
  * @interface
  * An interface representing optional parameters for listPropertiesOfSecretVersions
  */
-export interface ListPropertiesOfSecretVersionsOptions extends RequestOptionsBase {}
+export interface ListPropertiesOfSecretVersionsOptions extends coreHttp.RequestOptionsBase {}
 
 /**
  * @interface
  * An interface representing optional parameters for listPropertiesOfSecrets
  */
-export interface ListPropertiesOfSecretsOptions extends RequestOptionsBase {}
+export interface ListPropertiesOfSecretsOptions extends coreHttp.RequestOptionsBase {}
