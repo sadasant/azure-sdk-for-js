@@ -158,7 +158,7 @@ tasks using Azure Key Vault Certificates. The scenarios that are covered here co
 
 ### Creating and setting a certificate
 
-`createCertificate` creates a certificate to be stored in the Azure Key Vault. If
+`beginCreateCertificate` creates a certificate to be stored in the Azure Key Vault. If
 a certificate with the same name already exists, a new version of the
 certificate is created.
 
@@ -176,9 +176,10 @@ const client = new CertificateClient(url, credential);
 const certificateName = "MyCertificateName";
 
 async function main() {
-  const result = await client.createCertificate(certificateName, {
+  const poller = await client.beginCreateCertificate(certificateName, {
     issuerName: "Self"
   });
+  const result = await poller.pollUntilDone();
   console.log("result: ", result);
 }
 ```
@@ -210,7 +211,7 @@ const tags = {
 };
 
 async function main() {
-  const result = await client.createCertificate(
+  const poller = await client.beginCreateCertificate(
     certificateName,
     certificatePolicy,
     {
@@ -218,14 +219,56 @@ async function main() {
       tags
     }
   );
+  const result = await poller.pollUntilDone();
   console.log("result: ", result);
 }
 
 main();
 ```
 
-Calling to `createCertificate` with the same name will create a new version of
+Calling to `beginCreateCertificate` with the same name will create a new version of
 the same certificate, which will have the latest provided attributes.
+
+Since certificates need to be signed, they take considerable time to get fully created.
+For that reason, `beginCreateCertificate` returns a Poller object that keeps
+track of the underlying Long Running Operation according to our guidelines:
+https://azure.github.io/azure-sdk/typescript_design.html#ts-lro
+
+The received poller allows retrieving the pending certificate by calling to `poller.getPendingCertificate()`.
+You can also wait until the operation finishes, either by running individual
+service calls until the poller is done, or by waiting in a single call. More
+detail on that and other features provided by the poller can be seen in the
+following example:
+
+```typescript
+const { DefaultAzureCredential } = require("@azure/identity");
+const { CertificateClient } = require("@azure/keyvault-certificate");
+
+const credential = new DefaultAzureCredential();
+
+const vaultName = "<YOUR KEYVAULT NAME>";
+const url = `https://${vaultName}.vault.azure.net`;
+
+const client = new CertificateClient(url, credential);
+
+const certificateName = "MyCertificateName";
+
+async function main() {
+  const poller = await client.beginCreateCertificate(certificateName);
+
+  // You can use the pending certificate immediately:
+  const pendingCertificate = poller.getPendingCertificate();
+
+  await poller.poll(); // On each poll, the poller checks whether the certificate is fully created or not.
+  console.log(poller.isDone()) // The poller will be done once the certificate is fully created.
+
+  // Alternatively, you can keep polling automatically until the operation finishes with pollUntilDone:
+  const certificate = await poller.pollUntilDone();
+  console.log(certificate);
+}
+
+main();
+```
 
 ### Get a certificate
 
@@ -372,8 +415,29 @@ main();
 
 ### Deleting a certificate
 
-The `deleteCertificate` method sets a certificate up for deletion. This process will
+The `beginDeleteCertificate` method sets a certificate up for deletion. This process will
 happen in the background as soon as the necessary resources are available.
+
+```javascript
+const { DefaultAzureCredential } = require("@azure/identity");
+const { CertificateClient } = require("@azure/keyvault-certificates");
+
+const credential = new DefaultAzureCredential();
+
+const vaultName = "<YOUR KEYVAULT NAME>";
+const url = `https://${vaultName}.vault.azure.net`;
+
+const client = new CertificateClient(url, credential);
+
+const certificateName = "MyCertificateName";
+
+async function main() {
+  const poller = await client.beginDeleteCertificate(certificateName);
+  await poller.pollUntilDone();
+}
+
+main();
+```
 
 If [soft-delete](https://docs.microsoft.com/en-us/azure/key-vault/key-vault-ovw-soft-delete)
 is enabled for the Key Vault, this operation will only label the certificate as a
@@ -394,23 +458,69 @@ const client = new CertificateClient(url, credential);
 const certificateName = "MyCertificateName";
 
 async function main() {
-  await client.deleteCertificate(certificateName);
+  const poller = await client.beginDeleteCertificate(certificateName)
 
-  // If soft-delete is enabled, we can eventually do:
+  // You can use the deleted certificate immediately:
+  const deletedCertificate = poller.getDeletedCertificate();
+
+  // The certificate is being deleted. Only wait for it if you want to restore it or purge it.
+  await poller.pollUntilDone();
+
+  // You can also get the deleted certificate this way:
   await client.getDeletedCertificate(certificateName);
+
   // Deleted certificates can also be recovered or purged:
-  await client.recoverDeletedCertificate(certificateName);
-  // or
+
+  // recoverDeletedCertificate also returns a poller, just like beginDeleteCertificate.
+  const recoverPoller = await client.beginRecoverDeletedCertificate(certificateName)
+  const recoverPoller.pollUntilDone();
+
+  // And here is how to purge a deleted certificate
   await client.purgeDeletedCertificate(certificateName);
 }
 
 main();
 ```
 
-Since the deletion of a certificate won't happen instantly, some time is needed
-after the `deleteCertificate` method is called before the deleted certificate is
-available to be read, recovered or purged.
+Since certificates take some time to get fully deleted, `beginDeleteCertificate`
+returns a Poller object that keeps track of the underlying Long Running
+Operation according to our guidelines:
+https://azure.github.io/azure-sdk/typescript_design.html#ts-lro
 
+The received poller will allow you to get the deleted certificate by calling to `poller.getDeletedCertificate()`.
+You can also wait until the deletion finishes, either by running individual service
+calls until the certificate is deleted, or by waiting until the process is done:
+
+```typescript
+const { DefaultAzureCredential } = require("@azure/identity");
+const { CertificateClient } = require("@azure/keyvault-certificates");
+
+const credential = new DefaultAzureCredential();
+
+const vaultName = "<YOUR KEYVAULT NAME>";
+const url = `https://${vaultName}.vault.azure.net`;
+
+const client = new CertificateClient(url, credential);
+
+const certificateName = "MyCertificateName";
+
+async function main() {
+  const poller = await client.beginDeleteCertificate(certificateName);
+
+  // You can use the deleted certificate immediately:
+  let deletedCertificate = poller.getDeletedCertificate();
+
+  await poller.poll(); // On each poll, the poller checks whether the certificate has been deleted or not.
+  console.log(poller.isDone()) // The poller will be done once the certificate is fully deleted.
+
+  // Alternatively, you can keep polling automatically until the operation finishes with pollUntilDone:
+  deletedCertificate = await poller.pollUntilDone();
+  console.log(deletedCertificate);
+}
+
+main();
+```
+ 
 ### Iterating lists of certificates
 
 Using the CertificateClient, you can retrieve and iterate through all of the

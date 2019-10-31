@@ -11,6 +11,95 @@ import {
 } from "./core/models";
 
 /**
+ * @internal
+ * @ignore
+ * @interface
+ * An interface representing the KeyClient. For internal use.
+ */
+export interface KeyClientInterface {
+  /**
+   * Recovers the deleted key in the specified vault. This operation can only be performed on a
+   * soft-delete enabled vault.
+   */
+  recoverDeletedKey(name: string, options?: RecoverDeletedKeyOptions): Promise<KeyVaultKey>;
+  /**
+   * The get method gets a specified key and is applicable to any key stored in Azure Key Vault.
+   * This operation requires the keys/get permission.
+   */
+  getKey(name: string, options?: GetKeyOptions): Promise<KeyVaultKey>;
+  /**
+   * The delete operation applies to any key stored in Azure Key Vault. Individual versions
+   * of a key can not be deleted, only all versions of a given key at once.
+   */
+  deleteKey(name: string, options?: DeleteKeyOptions): Promise<DeletedKey>;
+  /**
+   * The getDeletedKey method returns the specified deleted key along with its properties.
+   * This operation requires the keys/get permission.
+   */
+  getDeletedKey(name: string, options?: GetDeletedKeyOptions): Promise<DeletedKey>;
+}
+
+/**
+ * @internal
+ * @ignore
+ * @interface
+ * An interface representing the CertificateClient. For internal use.
+ */
+export interface CertificatesClientInterface {
+  /**
+   * Creates a new certificate. If this is the first version, the certificate resource is created. This operation requires the certificates/create permission.
+   */
+  createCertificate(
+    name: string,
+    certificatePolicy: CertificatePolicy,
+    options?: CreateCertificateOptions
+  ): Promise<Certificate>;
+  /**
+   * Gets the creation operation associated with a specified certificate. This operation requires the certificates/get permission.
+   */
+  getPlainCertificateOperation(
+    name: string,
+    options?: coreHttp.RequestOptionsBase
+  ): Promise<CertificateOperation>;
+  /**
+   * Updates a certificate creation operation that is already in progress. This operation requires the certificates/update permission.
+   */
+  cancelCertificateOperation(
+    name: string,
+    options?: coreHttp.RequestOptionsBase
+  ): Promise<CertificateOperation>;
+  /**
+   * Gets the latest information available from a specific certificate, including the certificate's policy. This operation requires the certificates/get permission.
+   */
+  getCertificateWithPolicy(
+    name: string,
+    options?: coreHttp.RequestOptionsBase
+  ): Promise<Certificate>;
+  /**
+   * The GetCertificatePolicy operation returns the specified certificate policy resources in the specified key vault. This operation requires the certificates/get permission.
+   */
+  getCertificatePolicy(
+    name: string,
+    options?: coreHttp.RequestOptionsBase
+  ): Promise<CertificatePolicy>;
+  /**
+   * Recovers the deleted certificate in the specified vault. This operation can only be performed on a
+   * soft-delete enabled vault.
+   */
+  recoverDeletedCertificate(name: string, options?: RecoverDeletedCertificateOptions): Promise<KeyVaultCertificate>;
+  /**
+   * The delete operation applies to any certificate stored in Azure Key Vault. Individual versions
+   * of a certificate can not be deleted, only all versions of a given certificate at once.
+   */
+  deleteCertificate(name: string, options?: DeleteCertificateOptions): Promise<DeletedCertificate>;
+  /**
+   * The getDeletedCertificate method returns the specified deleted certificate along with its properties.
+   * This operation requires the certificates/get permission.
+   */
+  getDeletedCertificate(name: string, options?: GetDeletedCertificateOptions): Promise<DeletedCertificate>;
+}
+
+/**
  * Defines values for contentType.
  * Possible values include: 'application/pem', 'application/x-pkcs12'
  * @readonly
