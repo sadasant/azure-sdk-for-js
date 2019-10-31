@@ -213,7 +213,39 @@ export class CertificateClient {
    * The authentication credentials
    */
   protected readonly credential: TokenCredential;
+
+  /**
+   * @internal
+   * @ignore
+   * A reference to the auto-generated KeyVault HTTP client.
+   */
   private readonly client: KeyVaultClient;
+
+  public async createCertificate(
+    name: string,
+    certificatePolicy: CertificatePolicy,
+    options: CreateCertificateOptions = {}
+  ): Promise<Certificate> {
+    const span = this.createSpan("createCertificate", options);
+
+    let result: CreateCertificateResponse;
+
+    try {
+      result = await this.client.createCertificate(this.vaultUrl, name, {
+        ...this.setParentSpan(span, options.requestOptions || {}),
+        certificateAttributes: {
+          ...options.certificateAttributes,
+          enabled: options.enabled
+        },
+        tags: options.tags,
+        certificatePolicy: toCorePolicy(certificatePolicy)
+      });
+    } finally {
+      span.end();
+    }
+
+    return this.getCertificateFromCertificateBundle(result);
+  } 
 
   /**
    * Creates an instance of CertificateClient.
