@@ -26,13 +26,7 @@ export type KeyCurveName = "P-256" | "P-384" | "P-521" | "P-256K";
  * @readonly
  * @enum {string}
  */
-export type KeyOperation =
-| "encrypt"
-| "decrypt"
-| "sign"
-| "verify"
-| "wrapKey"
-| "unwrapKey";
+export type KeyOperation = "encrypt" | "decrypt" | "sign" | "verify" | "wrapKey" | "unwrapKey";
 
 /**
  * Defines values for KeyType.
