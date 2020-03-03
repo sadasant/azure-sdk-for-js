@@ -18,7 +18,11 @@
     "declarationDir": "./types",
     "lib": ["dom", "es5", "es6", "es7", "esnext"],
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "rootDirs": [
+      "./",
+      "../keyvault-common/src"
+    ]
   },
   "compileOnSave": true,
   "exclude": ["node_modules", "./samples/**/*.ts"],

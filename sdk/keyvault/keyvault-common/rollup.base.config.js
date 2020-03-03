@@ -22,7 +22,7 @@ const banner = [
   " * Licensed under the MIT License. See License.txt in the project root for",
   " * license information.",
   " * ",
-  ` * Azure KeyVault Test Utilities for JavaScript - ${version}`,
+  ` * Azure KeyVault Common Code for JavaScript - ${version}`,
   " */"
 ].join("\n");
 
@@ -86,10 +86,10 @@ export function browserConfig(test = false) {
   const baseConfig = {
     input: "dist-esm/src/index.js",
     output: {
-      file: "dist-browser/azure-keyvault-test-utils.js",
+      file: "dist-browser/azure-keyvault-common.js",
       banner: banner,
       format: "umd",
-      name: "azurekeyvaulttestuitls",
+      name: "azurekeyvaultcommon",
       globals: {
         "@azure/core-http": "Azure.Core.HTTP"
       },

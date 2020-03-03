@@ -408,8 +408,8 @@
       "versionPolicyName": "client"
     },
     {
-      "packageName": "@azure/keyvault-test-utils",
-      "projectFolder": "sdk/keyvault/keyvault-test-utils",
+      "packageName": "@azure/keyvault-common",
+      "projectFolder": "sdk/keyvault/keyvault-common",
       "versionPolicyName": "utility"
     },
     {

@@ -1,5 +1,5 @@
 import chai from "chai";
-import { retry } from "../src/utils/retry";
+import { retry } from "../src/test-utils/utils/retry";
 const assert = chai.assert;
 
 describe("retry utility function", function() {
