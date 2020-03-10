@@ -164,7 +164,7 @@ export class KeyClient {
   /**
    * @internal
    * @ignore
-   * A reference to the auto-generated KeyVault HTTP client.
+   * A reference to the auto-generated Key Vault HTTP client.
    */
   private readonly client: KeyVaultClient;
 
@@ -247,9 +247,9 @@ export class KeyClient {
   /**
    * @internal
    * @ignore
-   * Sends a delete request for the given KeyVault Key's name to the KeyVault service.
-   * Since the KeyVault Key won't be immediately deleted, we have {@link beginDeleteKey}.
-   * @param {string} name The name of the KeyVault Key.
+   * Sends a delete request for the given Key Vault Key's name to the Key Vault service.
+   * Since the Key Vault Key won't be immediately deleted, we have {@link beginDeleteKey}.
+   * @param {string} name The name of the Key Vault Key.
    * @param {DeleteKeyOptions} [options] Optional parameters for the underlying HTTP request.
    */
   private async deleteKey(name: string, options: DeleteKeyOptions = {}): Promise<DeletedKey> {
@@ -273,9 +273,9 @@ export class KeyClient {
   /**
    * @internal
    * @ignore
-   * Sends a request to recover a deleted KeyVault Key based on the given name.
-   * Since the KeyVault Key won't be immediately recover the deleted key, we have {@link beginRecoverDeletedKey}.
-   * @param {string} name The name of the KeyVault Key.
+   * Sends a request to recover a deleted Key Vault Key based on the given name.
+   * Since the Key Vault Key won't be immediately recover the deleted key, we have {@link beginRecoverDeletedKey}.
+   * @param {string} name The name of the Key Vault Key.
    * @param {RecoverDeletedKeyOptions} [options] Optional parameters for the underlying HTTP request.
    */
   private async recoverDeletedKey(
@@ -831,7 +831,7 @@ export class KeyClient {
    * @internal
    * @ignore
    * Deals with the pagination of {@link listPropertiesOfKeyVersions}.
-   * @param {string} name The name of the KeyVault Key.
+   * @param {string} name The name of the Key Vault Key.
    * @param {PageSettings} continuationState An object that indicates the position of the paginated request.
    * @param {ListPropertiesOfKeyVersionsOptions} [options] Common options for the iterative endpoints.
    */
@@ -874,7 +874,7 @@ export class KeyClient {
    * @internal
    * @ignore
    * Deals with the iteration of all the available results of {@link listPropertiesOfKeyVersions}.
-   * @param {string} name The name of the KeyVault Key.
+   * @param {string} name The name of the Key Vault Key.
    * @param {ListPropertiesOfKeyVersionsOptions} [options] Common options for the iterative endpoints.
    */
   private async *listPropertiesOfKeyVersionsAll(

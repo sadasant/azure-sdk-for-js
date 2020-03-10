@@ -391,7 +391,7 @@ function toPublicIssuer(issuer: IssuerBundle = {}): CertificateIssuer {
 }
 
 /**
- * The client to interact with the KeyVault certificates functionality
+ * The client to interact with the Key Vault certificates functionality
  */
 export class CertificateClient {
   /**

@@ -107,7 +107,7 @@ export class SecretClient {
   /**
    * @internal
    * @ignore
-   * A reference to the auto-generated KeyVault HTTP client.
+   * A reference to the auto-generated Key Vault HTTP client.
    */
   private readonly client: KeyVaultClient;
 
@@ -578,9 +578,9 @@ export class SecretClient {
   /**
    * @internal
    * @ignore
-   * Sends a delete request for the given KeyVault Secret's name to the KeyVault service.
-   * Since the KeyVault Secret won't be immediately deleted, we have {@link beginDeleteSecret}.
-   * @param {string} name The name of the KeyVault Secret.
+   * Sends a delete request for the given Key Vault Secret's name to the Key Vault service.
+   * Since the Key Vault Secret won't be immediately deleted, we have {@link beginDeleteSecret}.
+   * @param {string} name The name of the Key Vault Secret.
    * @param {RequestOptionsBase} [options] Optional parameters for the underlying HTTP request.
    */
   private async deleteSecret(
@@ -607,9 +607,9 @@ export class SecretClient {
   /**
    * @internal
    * @ignore
-   * Sends a request to recover a deleted KeyVault Secret based on the given name.
-   * Since the KeyVault Secret won't be immediately recover the deleted secret, we have {@link beginRecoverDeletedSecret}.
-   * @param {string} name The name of the KeyVault Secret.
+   * Sends a request to recover a deleted Key Vault Secret based on the given name.
+   * Since the Key Vault Secret won't be immediately recover the deleted secret, we have {@link beginRecoverDeletedSecret}.
+   * @param {string} name The name of the Key Vault Secret.
    * @param {RecoverDeletedKeyOptions} [options] Optional parameters for the underlying HTTP request.
    */
   private async recoverDeletedSecret(
@@ -639,7 +639,7 @@ export class SecretClient {
    * @internal
    * @ignore
    * Deals with the pagination of {@link listPropertiesOfSecretVersions}.
-   * @param {string} name The name of the KeyVault Secret.
+   * @param {string} name The name of the Key Vault Secret.
    * @param {PageSettings} continuationState An object that indicates the position of the paginated request.
    * @param {ListPropertiesOfSecretVersionsOptions} [options] Optional parameters for the underlying HTTP request.
    */
@@ -686,7 +686,7 @@ export class SecretClient {
    * @internal
    * @ignore
    * Deals with the iteration of all the available results of {@link listPropertiesOfSecretVersions}.
-   * @param {string} name The name of the KeyVault Secret.
+   * @param {string} name The name of the Key Vault Secret.
    * @param {ListPropertiesOfSecretVersionsOptions} [options] Optional parameters for the underlying HTTP request.
    */
   private async *listPropertiesOfSecretVersionsAll(

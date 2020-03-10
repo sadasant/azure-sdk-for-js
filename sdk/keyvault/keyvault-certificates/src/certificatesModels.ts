@@ -78,7 +78,7 @@ export interface CertificateClientInterface {
 }
 
 /**
- * The latest supported KeyVault service API version
+ * The latest supported Key Vault service API version
  */
 export const LATEST_API_VERSION = "7.1-preview";
 
