@@ -81,9 +81,9 @@ export interface DecryptResult {
 // @public
 export interface DeletedKey {
     id?: string;
-    key?: JsonWebKey;
+    key?: JsonWebKey_2;
     keyOperations?: KeyOperation[];
-    keyType?: KeyType;
+    keyType?: KeyType_2;
     name: string;
     properties: KeyProperties & {
         readonly recoveryId?: string;
@@ -130,7 +130,7 @@ export interface ImportKeyOptions extends coreHttp.OperationOptions {
 }
 
 // @public
-export interface JsonWebKey {
+interface JsonWebKey_2 {
     crv?: KeyCurveName;
     d?: Uint8Array;
     dp?: Uint8Array;
@@ -139,7 +139,7 @@ export interface JsonWebKey {
     k?: Uint8Array;
     keyOps?: KeyOperation[];
     kid?: string;
-    kty?: KeyType;
+    kty?: KeyType_2;
     n?: Uint8Array;
     p?: Uint8Array;
     q?: Uint8Array;
@@ -149,6 +149,8 @@ export interface JsonWebKey {
     y?: Uint8Array;
 }
 
+export { JsonWebKey_2 as JsonWebKey }
+
 // @public
 export class KeyClient {
     constructor(vaultUrl: string, credential: TokenCredential, pipelineOptions?: PipelineOptions);
@@ -156,11 +158,11 @@ export class KeyClient {
     beginDeleteKey(name: string, options?: BeginDeleteKeyOptions): Promise<PollerLike<PollOperationState<DeletedKey>, DeletedKey>>;
     beginRecoverDeletedKey(name: string, options?: BeginRecoverDeletedKeyOptions): Promise<PollerLike<PollOperationState<DeletedKey>, DeletedKey>>;
     createEcKey(name: string, options?: CreateEcKeyOptions): Promise<KeyVaultKey>;
-    createKey(name: string, keyType: KeyType, options?: CreateKeyOptions): Promise<KeyVaultKey>;
+    createKey(name: string, keyType: KeyType_2, options?: CreateKeyOptions): Promise<KeyVaultKey>;
     createRsaKey(name: string, options?: CreateRsaKeyOptions): Promise<KeyVaultKey>;
     getDeletedKey(name: string, options?: GetDeletedKeyOptions): Promise<DeletedKey>;
     getKey(name: string, options?: GetKeyOptions): Promise<KeyVaultKey>;
-    importKey(name: string, key: JsonWebKey, options?: ImportKeyOptions): Promise<KeyVaultKey>;
+    importKey(name: string, key: JsonWebKey_2, options?: ImportKeyOptions): Promise<KeyVaultKey>;
     listDeletedKeys(options?: ListDeletedKeysOptions): PagedAsyncIterableIterator<DeletedKey, DeletedKey[]>;
     listPropertiesOfKeys(options?: ListPropertiesOfKeysOptions): PagedAsyncIterableIterator<KeyProperties, KeyProperties[]>;
     listPropertiesOfKeyVersions(name: string, options?: ListPropertiesOfKeyVersionsOptions): PagedAsyncIterableIterator<KeyProperties, KeyProperties[]>;
@@ -200,14 +202,16 @@ export interface KeyProperties {
 }
 
 // @public
-export type KeyType = "EC" | "EC-HSM" | "RSA" | "RSA-HSM" | "oct";
+type KeyType_2 = "EC" | "EC-HSM" | "RSA" | "RSA-HSM" | "oct";
+
+export { KeyType_2 as KeyType }
 
 // @public
 export interface KeyVaultKey {
     id?: string;
-    key?: JsonWebKey;
+    key?: JsonWebKey_2;
     keyOperations?: KeyOperation[];
-    keyType?: KeyType;
+    keyType?: KeyType_2;
     name: string;
     properties: KeyProperties;
 }
