@@ -14,7 +14,7 @@ import {
   EncryptResult
 } from "./cryptographyClientModels";
 import { runOperation } from "./localCryptography/runOperation";
-import { EncryptionAlgorithm } from ".";
+import { EncryptionAlgorithm, DecryptResult } from ".";
 
 /**
  * A client used to perform local cryptographic operations with JSON Web Keys.
@@ -43,6 +43,34 @@ export class LocalCryptographyClient {
       "encrypt",
       algorithm,
       Buffer.from(plaintext)
+    )) as Buffer;
+    const keyID = this.key.kid;
+    return { result, algorithm: algorithm as EncryptionAlgorithm, keyID };
+  }
+
+  /**
+   * Encrypts the given plaintext with the specified cryptography algorithm
+   *
+   * Example usage:
+   * ```ts
+   * let client = new LocalCryptographyClient(jsonWebKey);
+   * let result = await client.decrypt("RSA1_5", encrypted.result);
+   * ```
+   * @param {LocalSupportedAlgorithmName} algorithm The algorithm to use.
+   * @param {Uint8Array} plaintext The text to encrypt.
+   */
+  public async decrypt(
+    algorithm: LocalSupportedAlgorithmName,
+    ciphertext: Uint8Array
+  ): Promise<DecryptResult> {
+    if (!isNode) {
+      throw new LocalCryptographyUnsupportedError("Encryption is only available in NodeJS");
+    }
+    const result = (await runOperation(
+      this.key,
+      "decrypt",
+      algorithm,
+      Buffer.from(ciphertext)
     )) as Buffer;
     const keyID = this.key.kid;
     return { result, algorithm: algorithm as EncryptionAlgorithm, keyID };

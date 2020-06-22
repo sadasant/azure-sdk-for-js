@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { publicEncrypt, createVerify } from "crypto";
+import { publicEncrypt, createVerify, publicDecrypt } from "crypto";
 import * as constants from "constants";
 import { isNode } from "@azure/core-http";
 import { JsonWebKey, KeyOperation } from "../keysModels";
@@ -43,6 +43,7 @@ export type RequireAtLeastOne<T> = {
 
 export type LocalCryptographyOperationName =
   | "encrypt"
+  | "decrypt"
   | "wrapKey"
   | "createHash"
   | "verify";
@@ -82,6 +83,9 @@ const RSA1_5: LocalSupportedAlgorithm = {
     async encrypt(keyPEM: string, data: Buffer): Promise<Buffer> {
       return publicEncrypt({ key: keyPEM, padding: constants.RSA_PKCS1_PADDING }, data);
     },
+    async decrypt(keyPEM: string, data: Buffer): Promise<Buffer> {
+      return publicDecrypt({ key: keyPEM, padding: constants.RSA_NO_PADDING }, data);
+    },
     async wrapKey(keyPEM: string, data: Buffer): Promise<Buffer> {
       return publicEncrypt({ key: keyPEM, padding: constants.RSA_PKCS1_PADDING }, data);
     }
@@ -92,10 +96,13 @@ const RSA_OAEP: LocalSupportedAlgorithm = {
   validate: pipeValidators(validators.keyOps, validators.rsa, validators.nodeOnly),
   operations: {
     async encrypt(keyPEM: string, data: Buffer): Promise<Buffer> {
-      return publicEncrypt(keyPEM, data);
+      return publicEncrypt({ key: keyPEM, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
+    },
+    async decrypt(keyPEM: string, data: Buffer): Promise<Buffer> {
+      return publicDecrypt({ key: keyPEM, padding: constants.RSA_NO_PADDING }, data);
     },
     async wrapKey(keyPEM: string, data: Buffer): Promise<Buffer> {
-      return publicEncrypt(keyPEM, data);
+      return publicEncrypt({ key: keyPEM, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
     }
   }
 };

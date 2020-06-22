@@ -6,7 +6,7 @@ import {
   localSupportedAlgorithms,
   LocalSupportedAlgorithmName
 } from "../../src/localCryptography/algorithms";
-import { JsonWebKey, KeyClient, CryptographyClient, SignatureAlgorithm } from "../../src";
+import { JsonWebKey, KeyClient, CryptographyClient, SignatureAlgorithm, LocalCryptographyClient } from "../../src";
 import * as chai from "chai";
 import { isNode } from "@azure/core-http";
 import { createHash } from "crypto";
@@ -99,21 +99,31 @@ describe("Local cryptography tests", () => {
         const localCryptoClient = await cryptoClient.getLocalCryptographyClient()!;
         const text = Buffer.from(this.test!.title);
         const encrypted = await localCryptoClient.encrypt("RSA1_5", text);
-        const unwrapped = await cryptoClient.decrypt("RSA1_5", encrypted.result);
+        const unwrapped = await localCryptoClient.decrypt("RSA1_5", encrypted.result);
         assert.deepEqual(unwrapped.result, text);
         await testClient.flushKey(keyName);
       });
-      it("RSA-OAEP", async function() {
+      it.only("RSA-OAEP", async function() {
         recorder.skip("browser", "Local encryption is only supported in NodeJS");
         const keyName = testClient.formatName(`${keyPrefix}-${this!.test!.title}-${keySuffix}`);
-        const keyVaultKey = await client.createKey(keyName, "RSA");
-        const cryptoClient = new CryptographyClient(keyVaultKey.id!, credential);
-
-        const localCryptoClient = await cryptoClient.getLocalCryptographyClient()!;
+        const jsonWebKey: JsonWebKey = {
+          "p": Buffer.from("5qCPf-yxEMHHCiTodWnVRz23421vhA_LB3rd-3vKlnINQoN1pxCnkFpKXMxKnmu3eAahRe9g8D1iTbo50t4OTHyXQzPYBNrSfX0xp8zcaPmH5ba-piiMcNGMFOQg_N7oywMwfuASEPP5Ex1CyyC9mJlCV_QN1UC7yWpgp1Uso3k", "base64"),
+          "kty": "RSA",
+          "q": Buffer.from("lTgmsfChDLBWHvFuAgnlGcvO-uzp6fE-JNSIBPsDZbNoznJJSr-xzmLDgZtmcIIzvQ-xfV7Ipj_TdV2e89NbE7tonxJPbqgd2lswe9ZaRUYGe9r7imfZQDIvr1YBUF4SV5nfze6In2gV6oVK8e2DyqUSxnNm8zFfMIWT2-TJN9U", "base64"),
+          "d": Buffer.from("kXR-1BGrMQnqBlBIfQ5606deI1GpOMMUDzfQcMMa-3tn4NgHfR4cUvxD__rrTHfxV-0IEcsJdvEYJD2_SJHZk6euY0QtVPkZ5PfLU1Mk3qjNqsLQn-XcinhVfvo4UYRxqQoF9KpepE6EMVDwVRKTh32D2qfen0SM5Vy9FaH_ZVN4gGoJ-CcUAszMWCP_vnxCTaScy7mFs8QIDYpJfx4Z_2Hbyc71-rJqvPa5mEy3W1puWGC8nNYzZ1L7ig9FWHT0Jmuvnt47ym58C7xr2uh8lDCYN38yuxNh9FbFUdrXmeU4dpgTRq7YljpgcfAM2Vq-eMsWI27r_u2u8iMGr5rh", "base64"),
+          "e": Buffer.from("AQAB", "base64"),
+          "keyOps": ["encrypt", "decrypt"],
+          "kid": "1",
+          "qi": Buffer.from("gHF9gPFBhpi0Et20CZPTPGyLr3U9pmbVwDJkERRvVL22zJ0F9fJ0AGg0gaGKi1kRYCNm5LRbzoDK2HZYGC3MoT_s9WcNqv3KI97fbppFnQwwRm2A73mfCB64wToGKE_V2CPCv27NGyrVcMKjUc5a3TX1gK8GDaV3nTI8Utr96S8", "base64"),
+          "dp": Buffer.from("dmbMBVMQ_Jdfhle4eD8jXfXTqJEQhW5OP8LWoDvHoEFhiVpQVrr4K-YO82F2laqbgKV2up7Q18XL6DfJY_bYxG_agIfnSWbGVeKmUY2dQs-I82hErK14nJsYHcmZHfma7k7u4NRMsiNvJl8JYZuneuaD5v_G8krPnfJdOMtDpZE", "base64"),
+          "dq": Buffer.from("aSzv0UHrMhdkTGEdieBRk_IcjK7KXPOGOs12phQLG_bt632QfVhKSk9AwCy5cpnDQAI8t0JEqTGZqUL406Fos6rHnj94r2VdzVey_8ZhUCyAS3JZFAAImAAHrk0vlecIhKhXoD3-HGVv9SJIZedkmkPpzOjwan-lOX0db8N9tJU", "base64"),
+          "n": Buffer.from("hm4JgPvWpwHyMh3bxhcTTNS-MLFCHfcJE66OAmGLUPJ-8l4uhEtpxAQ96DLBabc2WnLyIghqhRA6TQSEpMxeZw0tUyDeW6IiEowwVDYJa_LCYY-xzOd_BO1mjbBB5AgZHgVAsDty4iB-Jqk_ca-C3d3YlAcjYD4Ue8KqdqOoOodeHP7H7_tJCKTW98h1f0QV-5LOH4NP5oAlrFh0BYDn6687oVZHkTAl10iFRnGTsekpt-Ep4aNogHe8f2UTxmqTnChli_r0lRz1ZfzpCS3BLp8tRC4YvtwXoJaLiUSldR0qVqdwuvkRpg_hm3NlD424G7XAEulJTex4b1Otk0QCrQ", "base64")
+      }
+        const localCryptoClient = new LocalCryptographyClient(jsonWebKey)!;
         const text = Buffer.from(this.test!.title);
         const encrypted = await localCryptoClient.encrypt("RSA-OAEP", text);
-        const unwrapped = await cryptoClient.decrypt("RSA-OAEP", encrypted.result);
-        assert.deepEqual(unwrapped.result, text);
+        const decrypted = await localCryptoClient.decrypt("RSA-OAEP", encrypted.result);
+        assert.deepEqual(decrypted.result, text);
         await testClient.flushKey(keyName);
       });
     });

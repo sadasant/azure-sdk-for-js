@@ -53,17 +53,16 @@ function encodeBuffer(buffer: Uint8Array, bufferId: number): Uint8Array {
   return outputBuffer;
 }
 
-function makeSequence(encodedParts: Uint8Array[]): string {
+function makeSequence(encodedParts: Uint8Array[], priv: boolean = false): string {
   const totalLength = encodedParts.reduce((sum, part) => sum + part.length, 0);
   const sequence = new Uint8Array(totalLength);
 
   for (let i = 0; i < encodedParts.length; i++) {
     let previousLength = i > 0 ? encodedParts[i - 1].length : 0;
-    if (previousLength === 131) previousLength = 132;
     sequence.set(encodedParts[i], previousLength);
   }
 
-  const full_encoded = encodeBuffer(sequence, 0x30); // SEQUENCE
+  const full_encoded = encodeBuffer(sequence, priv ? 0xC0 : 0x30); // SEQUENCE
   return Buffer.from(full_encoded).toString("base64");
 }
 
@@ -107,6 +106,20 @@ export function convertJWKtoPEM(key: JsonWebKey): string {
     result += formatBase64Sequence(base64Sequence);
     result += "-----END RSA PUBLIC KEY-----\n";
   }
+
+  if (key.n && key.e && key.d) {
+    const encodedParts = [key.n, key.e, key.d, key.p, key.q, key.dp, key.dq, key.qi].filter(x => x).map((part) => encodeBuffer(part!, 0x2))
+    // const encodedParts = [
+    //   ...[key.n, key.e].map((part) => encodeBuffer(part!, 0x2)),
+    //   ...[key.d, key.p, key.q, key.dp, key.dq, key.qi].filter(x => x).map((part) => encodeBuffer(part!, 0x5))
+    // ]
+    const base64Sequence = makeSequence(encodedParts, true);
+    result += "-----BEGIN PRIVATE KEY-----\n";
+    result += formatBase64Sequence(base64Sequence);
+    result += "-----END PRIVATE KEY-----\n";
+  }
+
+  console.log({ result });
 
   if (!result.length) {
     throw new Error("Unsupported key format for local operations");
