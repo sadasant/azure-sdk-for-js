@@ -42,6 +42,7 @@ export const AllSupportedEnvironmentVariables = [
 export class EnvironmentCredential implements TokenCredential {
   private _environmentVarsMissing: string[] = [];
   private _credential?: TokenCredential = undefined;
+  
   /**
    * Creates an instance of the EnvironmentCredential class and reads
    * client secret details from environment variables.  If the expected
@@ -141,6 +142,11 @@ export class EnvironmentCredential implements TokenCredential {
     // the user knows the credential was not configured appropriately
     span.setStatus({ code: CanonicalCode.UNAUTHENTICATED });
     span.end();
-    throw new CredentialUnavailable("EnvironmentCredential is unavailable. Environment variables are not fully configured.");
+    throw new CredentialUnavailable(`EnvironmentCredential - Environment variables are not fully configured.
+  * Missing environment variables: ${this._environmentVarsMissing.join(", ")}
+  * Note:
+    To authenticate with a service principal AZURE_TENANT_ID, AZURE_CLIENT_ID, and either AZURE_CLIENT_SECRET or AZURE_CLIENT_CERTIFICATE_PATH must be set.
+    To authenticate with a user account AZURE_TENANT_ID, AZURE_USERNAME, and AZURE_PASSWORD must be set.
+`);
   }
 }

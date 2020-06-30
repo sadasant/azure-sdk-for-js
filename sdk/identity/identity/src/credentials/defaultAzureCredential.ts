@@ -50,7 +50,6 @@ export class DefaultAzureCredential extends ChainedTokenCredential {
     super(
       ...credentials
     );
-    this.UnavailableMessage =
-      "DefaultAzureCredential failed to retrieve a token from the included credentials";
+    this.classTitle = this.constructor.name;
   }
 }

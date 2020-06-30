@@ -335,7 +335,7 @@ export class ManagedIdentityCredential implements TokenCredential {
         // requests.
         this.isEndpointUnavailable = result === null;
       } else {
-        throw new CredentialUnavailable("The managed identity endpoint is not currently available");
+        throw new CredentialUnavailable("ManagedIdentityCredential - The managed identity endpoint is not currently available.");
       }
       return result;
     } catch (err) {
@@ -345,15 +345,15 @@ export class ManagedIdentityCredential implements TokenCredential {
       });
 
       if (err.code == "ENETUNREACH") {
-        throw new CredentialUnavailable("ManagedIdentityCredential is unavailable. No managed identity endpoint found.");
+        throw new CredentialUnavailable(`ManagedIdentityCredential - No managed identity endpoint found.\n${err.message}`);
       }
       throw new AuthenticationError(400, {
-        error: "ManagedIdentityCredential authentication failed.",
+        error: "ManagedIdentityCredential - Authentication failed.",
         error_description: err.message
       });
     } finally {
       if (this.isEndpointUnavailable) {
-        throw new CredentialUnavailable("ManagedIdentityCredential is unavailable. No managed identity endpoint found.");
+        throw new CredentialUnavailable("ManagedIdentityCredential - No managed identity endpoint found.");
       }
       span.end();
     }

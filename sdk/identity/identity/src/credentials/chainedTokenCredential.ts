@@ -12,10 +12,21 @@ import { CanonicalCode } from "@opentelemetry/api";
  */
 export class ChainedTokenCredential implements TokenCredential {
   /**
-   * The message to use when the chained token fails to get a token
+   * Title used to personalize errors and logs to any class extending ChainedTokenCredential.
    */
-  protected UnavailableMessage =
-    "ChainedTokenCredential failed to retrieve a token from the included credentials";
+  public classTitle = "ChainedTokenCredential";
+
+   /**
+   * The message to use when the chained token fails to get a token.
+   */
+  protected UnavailableMessage: {
+    get(this: ChainedTokenCredential): string
+  } = {
+    get() {
+      return `${this.classTitle} failed to retrieve a token from the included credentials`;
+    }
+  }
+
   private _sources: TokenCredential[] = [];
 
   /**
@@ -51,22 +62,23 @@ export class ChainedTokenCredential implements TokenCredential {
     let token = null;
     const errors = [];
 
-    const { span, options: newOptions } = createSpan("ChainedTokenCredential-getToken", options);
+    const { span, options: newOptions } = createSpan(`${this.classTitle}-getToken`, options);
 
     for (let i = 0; i < this._sources.length && token === null; i++) {
+      const source = this._sources[i];
       try {
-        token = await this._sources[i].getToken(scopes, newOptions);
-      } catch (err) {
-        if (err instanceof CredentialUnavailable) {
-          errors.push(err);
+        token = await source.getToken(scopes, newOptions);
+      } catch (error) {
+        if (error instanceof CredentialUnavailable) {
+          errors.push(error);
         } else {
-          throw err;
+          throw error;
         }
       }
     }
 
     if (!token && errors.length > 0) {
-      const err = new AggregateAuthenticationError(errors);
+      const err = new AggregateAuthenticationError(errors, `${this.classTitle} tried the following credentials:`);
       span.setStatus({
         code: CanonicalCode.UNAUTHENTICATED,
         message: err.message

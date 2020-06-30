@@ -126,7 +126,11 @@ export class AuthenticationError extends Error {
     }
 
     super(
-      `${errorResponse.error}(status code ${statusCode}).\nMore details:\n${errorResponse.errorDescription}`
+      `${errorResponse.error}\n
+* Response status code: ${statusCode}.
+* More details:
+  ${errorResponse.errorDescription}
+`
     );
     this.statusCode = statusCode;
     this.errorResponse = errorResponse;
@@ -153,9 +157,7 @@ export class AggregateAuthenticationError extends Error {
   public errors: any[];
 
   constructor(errors: any[], errMsg?: string) {
-    let errorDetail =
-      errors
-        .join("\n");
+    let errorDetail = errors.map(({ message }) => `* ${message}`).join("\n");
     super(`${errMsg}\n\n${errorDetail}`);
     this.errors = errors;
 
