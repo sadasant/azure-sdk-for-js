@@ -52,7 +52,7 @@ export class KeyVaultAccessControlClient {
   /**
    * @internal
    * @ignore
-   * A reference to the auto-generated KeyVault HTTP client.
+   * A reference to the auto-generated Key Vault HTTP client.
    */
   private readonly client: KeyVaultClient;
 
