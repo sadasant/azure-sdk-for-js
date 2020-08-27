@@ -34,3 +34,15 @@ export interface BackupPollerOptions extends coreHttp.OperationOptions {
  * passed to {@link beginBackup}
  */
 export interface BeginBackupOptions extends BackupPollerOptions {}
+
+/**
+ * An interface representing the optional parameters that can be
+ * passed to {@link beginRestore}
+ */
+export interface BeginRestoreOptions extends BackupPollerOptions {}
+
+/**
+ * An interface representing the optional parameters that can be
+ * passed to {@link beginSelectiveRestore}
+ */
+export interface BeginSelectiveRestoreOptions extends BackupPollerOptions {}

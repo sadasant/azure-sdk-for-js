@@ -5,13 +5,14 @@ import { AbortSignalLike } from "@azure/abort-controller";
 import { PollOperationState, PollOperation } from "@azure/core-lro";
 import { OperationOptions, operationOptionsToRequestOptionsBase, RequestOptionsBase } from "@azure/core-http";
 import { KeyVaultClient } from '../../generated/keyVaultClient';
-import { KeyVaultClientFullBackupOptionalParams, KeyVaultClientFullBackupResponse, KeyVaultClientFullBackupStatusResponse } from '../../generated/models';
+import { KeyVaultClientFullRestoreOptionalParams, KeyVaultClientFullRestoreResponse, KeyVaultClientFullRestoreStatusResponse } from '../../generated/models';
 import { createSpan } from '../../tracing';
+import { KeyVaultClientFullRestoreOperationResponse } from '../generated/models';
 
  /**
- * An interface representing the publicly available properties of the state of a backup Key Vault's poll operation.
+ * An interface representing the publicly available properties of the state of a restore Key Vault's poll operation.
  */
-export interface BackupOperationState extends PollOperationState<string> {
+export interface RestoreOperationState extends PollOperationState<undefined> {
   /**
    * The base URL to the vault
    */
@@ -25,32 +26,36 @@ export interface BackupOperationState extends PollOperationState<string> {
    */
   sasToken: string;
   /**
-   * Identifier for the full backup operation.
+   * The Folder name of the blob where the previous successful full backup was stored
+   */
+  folderName: string;
+  /**
+   * Identifier for the full restore operation.
    */
   jobId?: string;
   /**
-   * Status of the backup operation.
+   * Status of the restore operation.
    */
   status?: string;
   /**
-   * The status details of backup operation.
+   * The status details of restore operation.
    */
   statusDetails?: string;
   /**
-   * The start time of the backup operation in UTC
+   * The start time of the restore operation in UTC
    */
   startTime?: Date;
   /**
-   * The end time of the backup operation in UTC
+   * The end time of the restore operation in UTC
    */
   endTime?: Date;
 }
 
  /**
- * An internal interface representing the state of a backup Key Vault's poll operation.
+ * An internal interface representing the state of a restore Key Vault's poll operation.
  * @internal
  */
-export interface BackupPollOperationState extends PollOperationState<string> {
+export interface RestorePollOperationState extends PollOperationState<undefined> {
   /**
    * Options for the core-http requests.
    */
@@ -72,43 +77,47 @@ export interface BackupPollOperationState extends PollOperationState<string> {
    */
   sasToken: string;
   /**
-   * The id returned as part of the backup request
+   * The Folder name of the blob where the previous successful full backup was stored
+   */
+  folderName: string;
+  /**
+   * The id returned as part of the restore request
    */
   jobId?: string;
   /**
-   * Status of the backup operation.
+   * Status of the restore operation.
    */
   status?: string;
   /**
-   * The status details of backup operation.
+   * The status details of restore operation.
    */
   statusDetails?: string;
   /**
-   * The start time of the backup operation in UTC
+   * The start time of the restore operation in UTC
    */
   startTime?: Date;
   /**
-   * The end time of the backup operation in UTC
+   * The end time of the restore operation in UTC
    */
   endTime?: Date;
 }
 
 /**
- * An interface representing a backup Key Vault's poll operation.
+ * An interface representing a restore Key Vault's poll operation.
  */
-export interface BackupPollOperation
-  extends PollOperation<BackupPollOperationState, string> {}
+export interface RestorePollOperation
+  extends PollOperation<RestorePollOperationState, string> {}
 
 /**
- * Tracing the fullBackup operation
+ * Tracing the fullRestore operation
  */
-async function fullBackup(client: KeyVaultClient, vaultUrl: string, options: KeyVaultClientFullBackupOptionalParams): Promise<KeyVaultClientFullBackupResponse> {
+async function fullRestore(client: KeyVaultClient, vaultUrl: string, options: KeyVaultClientFullRestoreOptionalParams): Promise<KeyVaultClientFullRestoreOperationResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
-  const span = createSpan("generatedClient.fullBackup", requestOptions);
+  const span = createSpan("generatedClient.fullRestore", requestOptions);
 
-  let response: KeyVaultClientFullBackupResponse;
+  let response: KeyVaultClientFullRestoreOperationResponse;
   try {
-    response = await client.fullBackup(vaultUrl, options);
+    response = await client.fullRestoreOperation(vaultUrl, options);
   } finally {
     span.end();
   }
@@ -117,15 +126,15 @@ async function fullBackup(client: KeyVaultClient, vaultUrl: string, options: Key
 }
 
 /**
- * Tracing the fullBackupStatus operation
+ * Tracing the fullRestoreStatus operation
  */
-async function fullBackupStatus(client: KeyVaultClient, vaultUrl: string, jobId: string, options: OperationOptions): Promise<KeyVaultClientFullBackupStatusResponse> {
+async function fullRestoreStatus(client: KeyVaultClient, vaultUrl: string, jobId: string, options: OperationOptions): Promise<KeyVaultClientFullRestoreStatusResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
-  const span = createSpan("generatedClient.fullBackupStatus", requestOptions);
+  const span = createSpan("generatedClient.fullRestoreStatus", requestOptions);
 
-  let response: KeyVaultClientFullBackupStatusResponse;
+  let response: KeyVaultClientFullRestoreStatusResponse;
   try {
-    response = await client.fullBackupStatus(vaultUrl, jobId, options);
+    response = await client.fullRestoreStatus(vaultUrl, jobId, options);
   } finally {
     span.end();
   }
@@ -138,14 +147,14 @@ async function fullBackupStatus(client: KeyVaultClient, vaultUrl: string, jobId:
  * @param [options] The optional parameters, which are an abortSignal from @azure/abort-controller and a function that triggers the poller's onProgress function.
  */
 async function update(
-  this: BackupPollOperation,
+  this: RestorePollOperation,
   options: {
     abortSignal?: AbortSignalLike;
-    fireProgress?: (state: BackupPollOperationState) => void;
+    fireProgress?: (state: RestorePollOperationState) => void;
   } = {}
-): Promise<BackupPollOperation> {
+): Promise<RestorePollOperation> {
   const state = this.state;
-  const { vaultUrl, blobStorageUri, sasToken } = state;
+  const { vaultUrl, blobStorageUri, sasToken, folderName } = state;
 
   // Internal properties,
   // the reference is only potentially undefined in the public representation of the poller.
@@ -157,29 +166,31 @@ async function update(
   }
 
   if (!state.isStarted) {
-    const fullBackupOperation = await fullBackup(client, vaultUrl, {
+    const fullRestoreOperation = await fullRestore(client, vaultUrl, {
       ...requestOptions,
-      azureStorageBlobContainerUri: {
-        storageResourceUri: blobStorageUri,
-        token: sasToken
+      restoreBlobDetails: {
+        folderToRestore: folderName,
+        sasTokenParameters: {
+          storageResourceUri: blobStorageUri,
+          token: sasToken
+        }
       }
     });
 
-    const { startTime, jobId, azureStorageBlobContainerUri, endTime, error } = fullBackupOperation;
+    const { startTime, jobId, endTime, error } = fullRestoreOperation;
 
     if (!startTime) {
-      state.error = new Error(`Missing "startTime" from the full backup operation.`);
+      state.error = new Error(`Missing "startTime" from the full restore operation.`);
       state.isCompleted = true;
-      return makeBackupPollOperation(state);
+      return makeRestorePollOperation(state);
     }
 
     state.isStarted = true;
     state.jobId = jobId;
     state.endTime = endTime;
     state.startTime = startTime;
-    state.status = fullBackupOperation.status;
-    state.statusDetails = fullBackupOperation.statusDetails;
-    state.result = azureStorageBlobContainerUri;
+    state.status = fullRestoreOperation.status;
+    state.statusDetails = fullRestoreOperation.statusDetails;
 
     if (endTime) {
       state.isCompleted = true;
@@ -191,14 +202,14 @@ async function update(
   }
 
   if (!state.jobId) {
-    state.error = new Error(`Missing "jobId" from the full backup operation.`);
+    state.error = new Error(`Missing "jobId" from the full restore operation.`);
     state.isCompleted = true;
-    return makeBackupPollOperation(state);
+    return makeRestorePollOperation(state);
   }
 
   if (!state.isCompleted) {
-    const fullBackupOperation = await fullBackupStatus(client, vaultUrl, state.jobId, { requestOptions });
-    const { azureStorageBlobContainerUri, endTime, error } = fullBackupOperation;
+    const fullRestoreOperation = await fullRestoreStatus(client, vaultUrl, state.jobId, { requestOptions });
+    const { azureStorageBlobContainerUri, endTime, error } = fullRestoreOperation;
     state.result = azureStorageBlobContainerUri;
     if (endTime) {
       state.isCompleted = true;
@@ -209,21 +220,21 @@ async function update(
     }
   }
 
-  return makeBackupPollOperation(state);
+  return makeRestorePollOperation(state);
 }
 
 /**
  * @summary Reaches to the service and cancels the key's operation, also updating the key's poll operation
  * @param [options] The optional parameters, which is only an abortSignal from @azure/abort-controller
  */
-async function cancel(this: BackupPollOperation): Promise<BackupPollOperation> {
+async function cancel(this: RestorePollOperation): Promise<RestorePollOperation> {
   throw new Error("Canceling the deletion of a key is not supported.");
 }
 
 /**
  * @summary Serializes the create key's poll operation
  */
-function toString(this: BackupPollOperation): string {
+function toString(this: RestorePollOperation): string {
   return JSON.stringify({
     state: this.state
   });
@@ -233,9 +244,9 @@ function toString(this: BackupPollOperation): string {
  * @summary Builds a create key's poll operation
  * @param [state] A poll operation's state, in case the new one is intended to follow up where the previous one was left.
  */
-export function makeBackupPollOperation(
-  state: BackupPollOperationState
-): BackupPollOperation {
+export function makeRestorePollOperation(
+  state: RestorePollOperationState
+): RestorePollOperation {
   return {
     state: {
       ...state
