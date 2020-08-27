@@ -5,52 +5,55 @@ import { delay, RequestOptionsBase } from "@azure/core-http";
 import { Poller } from "@azure/core-lro";
 import { KeyVaultClient } from "../../generated/keyVaultClient";
 import {
-  BackupOperationState,
-  BackupPollOperationState,
-  makeBackupPollOperation
+  RestoreOperationState,
+  RestorePollOperationState,
+  makeRestorePollOperation
 } from "./operation";
 
-export interface BackupPollerOptions {
+export interface RestorePollerOptions {
   client: KeyVaultClient;
   vaultUrl: string;
   blobStorageUri: string;
   sasToken: string;
+  folderName: string;
   requestOptions?: RequestOptionsBase;
   intervalInMs?: number;
   resumeFrom?: string;
 }
 
 /**
- * Class that creates a poller that waits until the backup of a Key Vault ends up being generated.
+ * Class that creates a poller that waits until a Key Vault ends up being restored.
  */
-export class BackupPoller extends Poller<BackupPollOperationState, string> {
+export class RestorePoller extends Poller<RestorePollOperationState, undefined> {
   /**
    * Defines how much time the poller is going to wait before making a new request to the service.
-   * @memberof BackupPoller
+   * @memberof RestorePoller
    */
   public intervalInMs: number;
 
-  constructor(options: BackupPollerOptions) {
+  constructor(options: RestorePollerOptions) {
     const {
       client,
       vaultUrl,
       blobStorageUri,
       sasToken,
+      folderName,
       requestOptions,
       intervalInMs = 2000,
       resumeFrom
     } = options;
 
-    let state: BackupPollOperationState | undefined;
+    let state: RestorePollOperationState | undefined;
 
     if (resumeFrom) {
       state = JSON.parse(resumeFrom).state;
     }
 
-    const operation = makeBackupPollOperation({
+    const operation = makeRestorePollOperation({
       ...state,
       blobStorageUri,
       sasToken,
+      folderName,
       requestOptions,
       client,
       vaultUrl
@@ -63,7 +66,7 @@ export class BackupPoller extends Poller<BackupPollOperationState, string> {
 
   /**
    * The method used by the poller to wait before attempting to update its operation.
-   * @memberof BackupPoller
+   * @memberof RestorePoller
    */
   async delay(): Promise<void> {
     return delay(this.intervalInMs);
@@ -72,12 +75,13 @@ export class BackupPoller extends Poller<BackupPollOperationState, string> {
   /**
    * Gets the public state of the polling operation
    */
-  public getOperationState(): BackupOperationState {
-    const state: BackupOperationState = this.operation.state;
+  public getOperationState(): RestoreOperationState {
+    const state: RestoreOperationState = this.operation.state;
     return {
       vaultUrl: state.vaultUrl,
       blobStorageUri: state.blobStorageUri,
       sasToken: state.sasToken,
+      folderName: state.folderName,
       isStarted: state.isStarted,
       isCompleted: state.isCompleted,
       isCancelled: state.isCancelled,

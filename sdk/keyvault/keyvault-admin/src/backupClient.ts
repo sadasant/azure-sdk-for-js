@@ -1,16 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { createPipelineFromOptions, isTokenCredential, operationOptionsToRequestOptionsBase, signingPolicy, TokenCredential } from '@azure/core-http';
+import {
+  createPipelineFromOptions,
+  isTokenCredential,
+  operationOptionsToRequestOptionsBase,
+  signingPolicy,
+  TokenCredential
+} from "@azure/core-http";
+import { PollerLike, PollOperationState } from "@azure/core-lro";
 
-import { challengeBasedAuthenticationPolicy } from '../../keyvault-common';
-import { KeyVaultClient } from './generated/keyVaultClient';
-import { BackupClientOptions, BeginBackupOptions, BeginRestoreOptions } from './backupClientModels';
-import { LATEST_API_VERSION, SDK_VERSION } from './constants';
-import { logger } from './log';
-import { BackupPoller } from './lro/backup/poller';
-import { PollerLike, PollOperationState } from '@azure/core-lro';
-import { RestorePoller } from './restore/poller';
+import { challengeBasedAuthenticationPolicy } from "../../keyvault-common";
+import { KeyVaultClient } from "./generated/keyVaultClient";
+import { BackupClientOptions, BeginBackupOptions, BeginRestoreOptions } from "./backupClientModels";
+import { LATEST_API_VERSION, SDK_VERSION } from "./constants";
+import { logger } from "./log";
+import { BackupPoller } from "./lro/backup/poller";
+import { RestorePoller } from "./lro/restore/poller";
+import { SelectiveRestorePoller } from "./lro/selectiveRestore/poller";
 
 /**
  * The KeyVaultBackupClient provides methods to generate backups
@@ -95,13 +102,13 @@ export class KeyVaultBackupClient {
 
   /**
    * Starts generating a backup of an Azure Key Vault on the specified Storage Blob account.
-   * 
+   *
    * This function returns a Long Running Operation poller that allows you to wait indefinitely until the Key Vault backup is generated.
    *
    * Example usage:
    * ```ts
    * const client = new KeyVaultBackupClient(url, credentials);
-   * 
+   *
    * const blobStorageUri = "<blob-storage-uri>";
    * const sasToken = "<sas-token>";
    * const poller = await client.beginBackup(blobStorageUri, sasToken);
@@ -150,22 +157,24 @@ export class KeyVaultBackupClient {
   }
 
   /**
-   * Starts restoring an Azure Key Vault from the specified Storage Blob account.
-   * 
+   * Starts restoring all key materials using the SAS token pointing to a previously stored Azure Blob storage
+   * backup folder.
+   *
    * This function returns a Long Running Operation poller that allows you to wait indefinitely until the Key Vault backup is generated.
    *
    * Example usage:
    * ```ts
    * const client = new KeyVaultBackupClient(url, credentials);
-   * 
+   *
    * const blobStorageUri = "<blob-storage-uri>";
    * const sasToken = "<sas-token>";
-   * const poller = await client.beginRestore(blobStorageUri, sasToken);
+   * const folderName = "<folder-name>";
+   * const poller = await client.beginRestore(blobStorageUri, sasToken, folderName);
    *
    * // Serializing the poller
    * const serialized = poller.toString();
    * // A new poller can be created with:
-   * // await client.beginRestore(blobStorageUri, sasToken, { resumeFrom: serialized });
+   * // await client.beginRestore(blobStorageUri, sasToken, folderName, { resumeFrom: serialized });
    *
    * // Waiting until it's done
    * const backupUri = await poller.pollUntilDone();
@@ -174,10 +183,10 @@ export class KeyVaultBackupClient {
    * @summary Creates a new role assignment.
    * @param {string} blobStorageUri The URI of the blob storage account.
    * @param {string} sasToken The SAS token.
+   * @param {string} folderName The Folder name of the blob where the previous successful full backup was stored.
    * @param {CreateRoleAssignmentOptions} [options] The optional parameters.
    */
   public async beginRestore(
-    // System.Uri blobStorageUri, string sasToken, string folderName = null
     blobStorageUri: string,
     sasToken: string,
     folderName: string,
@@ -209,49 +218,56 @@ export class KeyVaultBackupClient {
   }
 
   /**
-   * Starts generating a backup of an Azure Key Vault on the specified Storage Blob account.
-   * 
+   * Starts restoring all key versions of a given key using user supplied SAS token pointing to a previously
+   * stored Azure Blob storage backup folder.
+   *
    * This function returns a Long Running Operation poller that allows you to wait indefinitely until the Key Vault backup is generated.
    *
    * Example usage:
    * ```ts
    * const client = new KeyVaultBackupClient(url, credentials);
-   * 
+   *
+   * const keyName = "<key-name>";
    * const blobStorageUri = "<blob-storage-uri>";
    * const sasToken = "<sas-token>";
-   * const poller = await client.beginBackup(blobStorageUri, sasToken);
+   * const poller = await client.beginSelectiveRestore(keyName, blobStorageUri, sasToken);
    *
    * // Serializing the poller
    * const serialized = poller.toString();
    * // A new poller can be created with:
-   * // await client.beginBackup(blobStorageUri, sasToken, { resumeFrom: serialized });
+   * // await client.beginBackup(keyName, blobStorageUri, sasToken, { resumeFrom: serialized });
    *
    * // Waiting until it's done
    * const backupUri = await poller.pollUntilDone();
    * console.log(backupUri);
    * ```
    * @summary Creates a new role assignment.
+   * @param {string} keyName The name of the key that wants to be restored.
    * @param {string} blobStorageUri The URI of the blob storage account.
    * @param {string} sasToken The SAS token.
+   * @param {string} folderName The Folder name of the blob where the previous successful full backup was stored.
    * @param {CreateRoleAssignmentOptions} [options] The optional parameters.
    */
   public async beginSelectiveRestore(
-    // string keyName, System.Uri blobStorageUri, string sasToken, string folderName = null, 
+    keyName: string,
     blobStorageUri: string,
     sasToken: string,
+    folderName: string,
     options: BeginBackupOptions = {}
-  ): Promise<PollerLike<PollOperationState<string>, string>> {
+  ): Promise<PollerLike<PollOperationState<undefined>, undefined>> {
     const requestOptions = operationOptionsToRequestOptionsBase(options);
 
-    if (!(blobStorageUri && sasToken)) {
+    if (!(keyName && blobStorageUri && sasToken && folderName)) {
       throw new Error(
-        "beginBackup requires non-empty strings for the parameters: blobStorageUri and sasToken."
+        "beginSelectiveRestore requires non-empty strings for the parameters: keyName, blobStorageUri, sasToken and folderName."
       );
     }
 
-    const poller = new BackupPoller({
+    const poller = new SelectiveRestorePoller({
+      keyName,
       blobStorageUri,
       sasToken,
+      folderName,
       client: this.client,
       vaultUrl: this.vaultUrl,
       intervalInMs: options.intervalInMs,
