@@ -3,13 +3,20 @@
 
 import { AbortSignalLike } from "@azure/abort-controller";
 import { PollOperationState, PollOperation } from "@azure/core-lro";
-import { OperationOptions, operationOptionsToRequestOptionsBase, RequestOptionsBase } from "@azure/core-http";
-import { KeyVaultClient } from '../../generated/keyVaultClient';
-import { KeyVaultClientFullRestoreOptionalParams, KeyVaultClientFullRestoreResponse, KeyVaultClientFullRestoreStatusResponse } from '../../generated/models';
-import { createSpan } from '../../tracing';
-import { KeyVaultClientFullRestoreOperationResponse } from '../generated/models';
+import {
+  OperationOptions,
+  operationOptionsToRequestOptionsBase,
+  RequestOptionsBase
+} from "@azure/core-http";
+import { KeyVaultClient } from "../../generated/keyVaultClient";
+import {
+  KeyVaultClientFullRestoreOperationOptionalParams,
+  KeyVaultClientFullRestoreStatusResponse
+} from "../../generated/models";
+import { createSpan, setParentSpan } from "../../tracing";
+import { KeyVaultClientFullRestoreOperationResponse } from "../../generated/models";
 
- /**
+/**
  * An interface representing the publicly available properties of the state of a restore Key Vault's poll operation.
  */
 export interface RestoreOperationState extends PollOperationState<undefined> {
@@ -26,7 +33,7 @@ export interface RestoreOperationState extends PollOperationState<undefined> {
    */
   sasToken: string;
   /**
-   * The Folder name of the blob where the previous successful full backup was stored
+   * The Folder name of the blob where the previous successful full backup was stored.
    */
   folderName: string;
   /**
@@ -51,7 +58,7 @@ export interface RestoreOperationState extends PollOperationState<undefined> {
   endTime?: Date;
 }
 
- /**
+/**
  * An internal interface representing the state of a restore Key Vault's poll operation.
  * @internal
  */
@@ -105,19 +112,22 @@ export interface RestorePollOperationState extends PollOperationState<undefined>
 /**
  * An interface representing a restore Key Vault's poll operation.
  */
-export interface RestorePollOperation
-  extends PollOperation<RestorePollOperationState, string> {}
+export interface RestorePollOperation extends PollOperation<RestorePollOperationState, string> {}
 
 /**
  * Tracing the fullRestore operation
  */
-async function fullRestore(client: KeyVaultClient, vaultUrl: string, options: KeyVaultClientFullRestoreOptionalParams): Promise<KeyVaultClientFullRestoreOperationResponse> {
+async function fullRestore(
+  client: KeyVaultClient,
+  vaultUrl: string,
+  options: KeyVaultClientFullRestoreOperationOptionalParams
+): Promise<KeyVaultClientFullRestoreOperationResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
   const span = createSpan("generatedClient.fullRestore", requestOptions);
 
   let response: KeyVaultClientFullRestoreOperationResponse;
   try {
-    response = await client.fullRestoreOperation(vaultUrl, options);
+    response = await client.fullRestoreOperation(vaultUrl, setParentSpan(span, requestOptions));
   } finally {
     span.end();
   }
@@ -126,15 +136,20 @@ async function fullRestore(client: KeyVaultClient, vaultUrl: string, options: Ke
 }
 
 /**
- * Tracing the fullRestoreStatus operation
+ * Tracing the fullRestoreStatus operation.
  */
-async function fullRestoreStatus(client: KeyVaultClient, vaultUrl: string, jobId: string, options: OperationOptions): Promise<KeyVaultClientFullRestoreStatusResponse> {
+async function fullRestoreStatus(
+  client: KeyVaultClient,
+  vaultUrl: string,
+  jobId: string,
+  options: OperationOptions
+): Promise<KeyVaultClientFullRestoreStatusResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
   const span = createSpan("generatedClient.fullRestoreStatus", requestOptions);
 
   let response: KeyVaultClientFullRestoreStatusResponse;
   try {
-    response = await client.fullRestoreStatus(vaultUrl, jobId, options);
+    response = await client.fullRestoreStatus(vaultUrl, jobId, setParentSpan(span, requestOptions));
   } finally {
     span.end();
   }
@@ -208,9 +223,10 @@ async function update(
   }
 
   if (!state.isCompleted) {
-    const fullRestoreOperation = await fullRestoreStatus(client, vaultUrl, state.jobId, { requestOptions });
-    const { azureStorageBlobContainerUri, endTime, error } = fullRestoreOperation;
-    state.result = azureStorageBlobContainerUri;
+    const fullRestoreOperation = await fullRestoreStatus(client, vaultUrl, state.jobId, {
+      requestOptions
+    });
+    const { endTime, error } = fullRestoreOperation;
     if (endTime) {
       state.isCompleted = true;
     }
@@ -244,9 +260,7 @@ function toString(this: RestorePollOperation): string {
  * @summary Builds a create key's poll operation
  * @param [state] A poll operation's state, in case the new one is intended to follow up where the previous one was left.
  */
-export function makeRestorePollOperation(
-  state: RestorePollOperationState
-): RestorePollOperation {
+export function makeRestorePollOperation(state: RestorePollOperationState): RestorePollOperation {
   return {
     state: {
       ...state

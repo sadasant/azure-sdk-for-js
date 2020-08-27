@@ -3,12 +3,20 @@
 
 import { AbortSignalLike } from "@azure/abort-controller";
 import { PollOperationState, PollOperation } from "@azure/core-lro";
-import { OperationOptions, operationOptionsToRequestOptionsBase, RequestOptionsBase } from "@azure/core-http";
-import { KeyVaultClient } from '../../generated/keyVaultClient';
-import { KeyVaultClientFullBackupOptionalParams, KeyVaultClientFullBackupResponse, KeyVaultClientFullBackupStatusResponse } from '../../generated/models';
-import { createSpan } from '../../tracing';
+import {
+  OperationOptions,
+  operationOptionsToRequestOptionsBase,
+  RequestOptionsBase
+} from "@azure/core-http";
+import { KeyVaultClient } from "../../generated/keyVaultClient";
+import {
+  KeyVaultClientFullBackupOptionalParams,
+  KeyVaultClientFullBackupResponse,
+  KeyVaultClientFullBackupStatusResponse
+} from "../../generated/models";
+import { createSpan, setParentSpan } from "../../tracing";
 
- /**
+/**
  * An interface representing the publicly available properties of the state of a backup Key Vault's poll operation.
  */
 export interface BackupOperationState extends PollOperationState<string> {
@@ -46,7 +54,7 @@ export interface BackupOperationState extends PollOperationState<string> {
   endTime?: Date;
 }
 
- /**
+/**
  * An internal interface representing the state of a backup Key Vault's poll operation.
  * @internal
  */
@@ -96,19 +104,22 @@ export interface BackupPollOperationState extends PollOperationState<string> {
 /**
  * An interface representing a backup Key Vault's poll operation.
  */
-export interface BackupPollOperation
-  extends PollOperation<BackupPollOperationState, string> {}
+export interface BackupPollOperation extends PollOperation<BackupPollOperationState, string> {}
 
 /**
  * Tracing the fullBackup operation
  */
-async function fullBackup(client: KeyVaultClient, vaultUrl: string, options: KeyVaultClientFullBackupOptionalParams): Promise<KeyVaultClientFullBackupResponse> {
+async function fullBackup(
+  client: KeyVaultClient,
+  vaultUrl: string,
+  options: KeyVaultClientFullBackupOptionalParams
+): Promise<KeyVaultClientFullBackupResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
   const span = createSpan("generatedClient.fullBackup", requestOptions);
 
   let response: KeyVaultClientFullBackupResponse;
   try {
-    response = await client.fullBackup(vaultUrl, options);
+    response = await client.fullBackup(vaultUrl, setParentSpan(span, requestOptions));
   } finally {
     span.end();
   }
@@ -119,13 +130,18 @@ async function fullBackup(client: KeyVaultClient, vaultUrl: string, options: Key
 /**
  * Tracing the fullBackupStatus operation
  */
-async function fullBackupStatus(client: KeyVaultClient, vaultUrl: string, jobId: string, options: OperationOptions): Promise<KeyVaultClientFullBackupStatusResponse> {
+async function fullBackupStatus(
+  client: KeyVaultClient,
+  vaultUrl: string,
+  jobId: string,
+  options: OperationOptions
+): Promise<KeyVaultClientFullBackupStatusResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
   const span = createSpan("generatedClient.fullBackupStatus", requestOptions);
 
   let response: KeyVaultClientFullBackupStatusResponse;
   try {
-    response = await client.fullBackupStatus(vaultUrl, jobId, options);
+    response = await client.fullBackupStatus(vaultUrl, jobId, setParentSpan(span, requestOptions));
   } finally {
     span.end();
   }
@@ -197,7 +213,9 @@ async function update(
   }
 
   if (!state.isCompleted) {
-    const fullBackupOperation = await fullBackupStatus(client, vaultUrl, state.jobId, { requestOptions });
+    const fullBackupOperation = await fullBackupStatus(client, vaultUrl, state.jobId, {
+      requestOptions
+    });
     const { azureStorageBlobContainerUri, endTime, error } = fullBackupOperation;
     state.result = azureStorageBlobContainerUri;
     if (endTime) {
@@ -233,9 +251,7 @@ function toString(this: BackupPollOperation): string {
  * @summary Builds a create key's poll operation
  * @param [state] A poll operation's state, in case the new one is intended to follow up where the previous one was left.
  */
-export function makeBackupPollOperation(
-  state: BackupPollOperationState
-): BackupPollOperation {
+export function makeBackupPollOperation(state: BackupPollOperationState): BackupPollOperation {
   return {
     state: {
       ...state
