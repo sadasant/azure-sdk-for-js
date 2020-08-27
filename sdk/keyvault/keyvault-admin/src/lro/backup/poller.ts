@@ -4,7 +4,7 @@
 import { delay, RequestOptionsBase } from "@azure/core-http";
 import { Poller } from "@azure/core-lro";
 import { KeyVaultClient } from '../../generated/keyVaultClient';
-import { BackupPollOperationState, makeBackupPollOperation } from "./operation";
+import { BackupOperationState, BackupPollOperationState, makeBackupPollOperation } from "./operation";
 
 export interface BackupPollerOptions {
   client: KeyVaultClient;
@@ -55,5 +55,24 @@ export class BackupPoller extends Poller<BackupPollOperationState, string> {
    */
   async delay(): Promise<void> {
     return delay(this.intervalInMs);
+  }
+
+  /**
+   * Gets the public state of the polling operation
+   */
+  public getOperationState(): BackupOperationState {
+    const state: BackupOperationState = this.operation.state;
+    return {
+      isStarted: state.isStarted,
+      isCompleted: state.isCompleted,
+      isCancelled: state.isCancelled,
+      error: state.error,
+      result: state.result,
+      jobId: state.jobId,
+      endTime: state.endTime,
+      startTime: state.startTime,
+      status: state.status,
+      statusDetails: state.statusDetails
+    };
   }
 }

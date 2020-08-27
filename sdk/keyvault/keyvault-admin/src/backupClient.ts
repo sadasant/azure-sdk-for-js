@@ -4,13 +4,12 @@
 import { createPipelineFromOptions, isTokenCredential, operationOptionsToRequestOptionsBase, signingPolicy, TokenCredential } from '@azure/core-http';
 
 import { challengeBasedAuthenticationPolicy } from '../../keyvault-common';
-
 import { KeyVaultClient } from './generated/keyVaultClient';
-
 import { BackupClientOptions, BeginBackupOptions } from './backupClientModels';
 import { LATEST_API_VERSION, SDK_VERSION } from './constants';
 import { logger } from './log';
-import { createSpan } from './tracing';
+import { BackupPoller } from './lro/backup/poller';
+import { PollerLike, PollOperationState } from '@azure/core-lro';
 
 /**
  * The KeyVaultBackupClient provides methods to generate backups
@@ -124,7 +123,7 @@ export class KeyVaultBackupClient {
     blobStorageUri: string,
     sasToken: string,
     options: BeginBackupOptions = {}
-  ): Promise<string> {
+  ): Promise<PollerLike<PollOperationState<string>, string>> {
     const requestOptions = operationOptionsToRequestOptionsBase(options);
 
     if (!(blobStorageUri && sasToken)) {
