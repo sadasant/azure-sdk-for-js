@@ -6,11 +6,28 @@
 
 import * as coreHttp from '@azure/core-http';
 import { PagedAsyncIterableIterator } from '@azure/core-paging';
+import { PollerLike } from '@azure/core-lro';
+import { PollOperationState } from '@azure/core-lro';
 import { TokenCredential } from '@azure/core-http';
 
 // @public
 export interface AccessControlClientOptions extends coreHttp.PipelineOptions {
     serviceVersion?: SUPPORTED_API_VERSIONS;
+}
+
+// @public
+export interface BackupClientOptions extends coreHttp.PipelineOptions {
+    serviceVersion?: SUPPORTED_API_VERSIONS;
+}
+
+// @public
+export interface BackupPollerOptions extends coreHttp.OperationOptions {
+    intervalInMs?: number;
+    resumeFrom?: string;
+}
+
+// @public
+export interface BeginBackupOptions extends BackupPollerOptions {
 }
 
 // @public
@@ -33,6 +50,13 @@ export class KeyVaultAccessControlClient {
     getRoleAssignment(roleScope: RoleAssignmentScope, name: string, options?: GetRoleAssignmentOptions): Promise<KeyVaultRoleAssignment>;
     listRoleAssignments(roleScope: RoleAssignmentScope, options?: ListRoleAssignmentsOptions): PagedAsyncIterableIterator<KeyVaultRoleAssignment>;
     listRoleDefinitions(roleScope: RoleAssignmentScope, options?: ListRoleDefinitionsOptions): PagedAsyncIterableIterator<KeyVaultRoleDefinition>;
+    readonly vaultUrl: string;
+}
+
+// @public
+export class KeyVaultBackupClient {
+    constructor(vaultUrl: string, credential: TokenCredential, pipelineOptions?: BackupClientOptions);
+    beginBackup(blobStorageUri: string, sasToken: string, options?: BeginBackupOptions): Promise<PollerLike<PollOperationState<string>, string>>;
     readonly vaultUrl: string;
 }
 
