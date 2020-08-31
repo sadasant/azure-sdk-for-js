@@ -20,6 +20,13 @@ export function getKeyvaultName(): string {
   return keyVaultName;
 }
 
+export function getKeyVaultUrl(): string {
+  const keyVaultEnvVarName = "KEYVAULT_URL";
+  const result: string | undefined = env[keyVaultEnvVarName];
+
+  return result!;
+}
+
 export async function assertThrowsAbortError(cb: () => Promise<any>): Promise<void> {
   let passed = false;
   try {

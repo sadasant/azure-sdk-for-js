@@ -5,7 +5,7 @@ import { ClientSecretCredential } from "@azure/identity";
 import { env, record, RecorderEnvironmentSetup } from "@azure/test-utils-recorder";
 
 import { KeyVaultAccessControlClient } from '../../src';
-import { getKeyvaultName } from "./common";
+import { getKeyvaultName, getKeyVaultUrl } from "./common";
 import { uniqueString } from "./recorder";
 
 export async function authenticate(that: any): Promise<any> {
@@ -33,7 +33,7 @@ export async function authenticate(that: any): Promise<any> {
   );
 
   const keyVaultName = getKeyvaultName();
-  const keyVaultUrl = `https://${keyVaultName}.vault.azure.net`;
+  const keyVaultUrl = getKeyVaultUrl() || `https://${keyVaultName}.vault.azure.net`;
   const client = new KeyVaultAccessControlClient(keyVaultUrl, credential);
 
   return { recorder, client, secretSuffix };
