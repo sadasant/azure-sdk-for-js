@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { ClientSecretCredential } from "@azure/identity";
-import { env, record, RecorderEnvironmentSetup } from "@azure/test-utils-recorder";
+import { AzureCliCredential } from "@azure/identity";
+import { record, RecorderEnvironmentSetup } from "@azure/test-utils-recorder";
 
 import { KeyVaultAccessControlClient } from '../../src';
 import { getKeyvaultName, getKeyVaultUrl } from "./common";
@@ -26,11 +26,7 @@ export async function authenticate(that: any): Promise<any> {
     queryParametersToSkip: []
   };
   const recorder = record(that, recorderEnvSetup);
-  const credential = await new ClientSecretCredential(
-    env.AZURE_TENANT_ID,
-    env.AZURE_CLIENT_ID,
-    env.AZURE_CLIENT_SECRET
-  );
+  const credential = await new AzureCliCredential();
 
   const keyVaultName = getKeyvaultName();
   const keyVaultUrl = getKeyVaultUrl() || `https://${keyVaultName}.vault.azure.net`;
