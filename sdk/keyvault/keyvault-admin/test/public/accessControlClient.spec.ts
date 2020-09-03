@@ -2,12 +2,9 @@
 // Licensed under the MIT license.
 
 import { assert } from "chai";
-import { env, isPlaybackMode, Recorder } from "@azure/test-utils-recorder";
-// import { AbortController } from "@azure/abort-controller";
+import { env, Recorder } from "@azure/test-utils-recorder";
 
 import { KeyVaultAccessControlClient } from '../../src';
-// import { assertThrowsAbortError } from "../utils/common";
-// import { testPollerProperties } from "../utils/recorder";
 import { authenticate } from "../utils/authentication";
 
 describe("KeyVaultAccessControlClient", () => {
@@ -60,9 +57,6 @@ describe("KeyVaultAccessControlClient", () => {
   });
 
   it("createRoleAssignment and deleteRoleAssignment", async function() {
-    // if (isPlaybackMode()) {
-    //   recorder.skip(undefined, "UUIDs are necessary to run this, but they're unique, so we're unable to mock them");
-    // }
     const roleDefinition = (await client.listRoleDefinitions(globalScope).next()).value;
     const name = generateFakeUUID();
     const assignment = await client.createRoleAssignment(globalScope, name, roleDefinition.id!, env.AZURE_TENANT_ID);
