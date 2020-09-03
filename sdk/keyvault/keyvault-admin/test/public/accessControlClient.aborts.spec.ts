@@ -4,7 +4,7 @@
 import { env, Recorder } from "@azure/test-utils-recorder";
 import { AbortController } from "@azure/abort-controller";
 
-import { KeyVaultAccessControlClient } from '../../src';
+import { KeyVaultAccessControlClient } from "../../src";
 import { assertThrowsAbortError } from "../utils/common";
 import { authenticate } from "../utils/authentication";
 
@@ -32,9 +32,11 @@ describe("Aborting KeyVaultAccessControlClient's requests", () => {
     controller.abort();
 
     await assertThrowsAbortError(async () => {
-      await client.listRoleDefinitions("/", {
-        abortSignal: controller.signal
-      }).next();
+      await client
+        .listRoleDefinitions("/", {
+          abortSignal: controller.signal
+        })
+        .next();
     });
   });
 

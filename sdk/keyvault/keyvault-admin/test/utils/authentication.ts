@@ -2,10 +2,15 @@
 // Licensed under the MIT license.
 
 import { AzureCliCredential } from "@azure/identity";
-import { isPlaybackMode, isRecordMode, record, RecorderEnvironmentSetup } from "@azure/test-utils-recorder";
+import {
+  isPlaybackMode,
+  isRecordMode,
+  record,
+  RecorderEnvironmentSetup
+} from "@azure/test-utils-recorder";
 import { v4 as uuidv4 } from "uuid";
 
-import { KeyVaultAccessControlClient } from '../../src';
+import { KeyVaultAccessControlClient } from "../../src";
 import { getKeyvaultName, getKeyVaultUrl } from "./common";
 import { uniqueString } from "./recorder";
 
@@ -27,8 +32,11 @@ export async function authenticate(that: any): Promise<any> {
         recording.replace(/"access_token":"[^"]*"/g, `"access_token":"access_token"`),
       (recording: any): any =>
         secretSuffix === "" ? recording : recording.replace(new RegExp(secretSuffix, "g"), ""),
-      (recording: any): any => 
-        recording.replace(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/ig, "b36b00af-89c6-435f-a43d-9a3087015c27") // Fake UUID
+      (recording: any): any =>
+        recording.replace(
+          /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/gi,
+          "b36b00af-89c6-435f-a43d-9a3087015c27"
+        ) // Fake UUID
     ],
     queryParametersToSkip: []
   };

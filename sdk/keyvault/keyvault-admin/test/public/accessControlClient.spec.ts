@@ -4,7 +4,7 @@
 import { assert } from "chai";
 import { env, Recorder } from "@azure/test-utils-recorder";
 
-import { KeyVaultAccessControlClient } from '../../src';
+import { KeyVaultAccessControlClient } from "../../src";
 import { authenticate } from "../utils/authentication";
 
 describe("KeyVaultAccessControlClient", () => {
@@ -59,7 +59,12 @@ describe("KeyVaultAccessControlClient", () => {
   it("createRoleAssignment and deleteRoleAssignment", async function() {
     const roleDefinition = (await client.listRoleDefinitions(globalScope).next()).value;
     const name = generateFakeUUID();
-    const assignment = await client.createRoleAssignment(globalScope, name, roleDefinition.id!, env.AZURE_TENANT_ID);
+    const assignment = await client.createRoleAssignment(
+      globalScope,
+      name,
+      roleDefinition.id!,
+      env.AZURE_TENANT_ID
+    );
     assert.equal(assignment.name, name);
     assert.equal(assignment.properties?.roleDefinitionId, roleDefinition.id);
     assert.equal(assignment.properties?.principalId, env.AZURE_TENANT_ID);
@@ -70,7 +75,7 @@ describe("KeyVaultAccessControlClient", () => {
     const roleDefinition = (await client.listRoleDefinitions(globalScope).next()).value;
     const name = generateFakeUUID();
     await client.createRoleAssignment(globalScope, name, roleDefinition.id!, env.AZURE_TENANT_ID);
-    const assignment = await client.getRoleAssignment(globalScope, name);    
+    const assignment = await client.getRoleAssignment(globalScope, name);
     assert.equal(assignment.name, name);
     assert.equal(assignment.properties?.roleDefinitionId, roleDefinition.id);
     assert.equal(assignment.properties?.principalId, env.AZURE_TENANT_ID);
