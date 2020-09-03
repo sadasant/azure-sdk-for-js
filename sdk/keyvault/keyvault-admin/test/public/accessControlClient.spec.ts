@@ -2,8 +2,7 @@
 // Licensed under the MIT license.
 
 import { assert } from "chai";
-import { v4 as uuidv4 } from "uuid";
-import { env, Recorder } from "@azure/test-utils-recorder";
+import { env, isPlaybackMode, Recorder } from "@azure/test-utils-recorder";
 // import { AbortController } from "@azure/abort-controller";
 
 import { KeyVaultAccessControlClient } from '../../src';
@@ -14,12 +13,14 @@ import { authenticate } from "../utils/authentication";
 describe("KeyVaultAccessControlClient", () => {
   let client: KeyVaultAccessControlClient;
   let recorder: Recorder;
+  let generateFakeUUID: () => string;
   const globalScope = "/";
 
   beforeEach(async function() {
     const authentication = await authenticate(this);
     client = authentication.client;
     recorder = authentication.recorder;
+    generateFakeUUID = authentication.generateFakeUUID;
   });
 
   afterEach(async function() {
@@ -53,13 +54,17 @@ describe("KeyVaultAccessControlClient", () => {
       "Managed HSM Crypto User",
       "Managed HSM Policy Administrator",
       "Managed HSM Crypto Auditor",
-      "Managed HSM Crypto Service Encryption"
+      "Managed HSM Crypto Service Encryption",
+      "Managed HSM Backup"
     ]);
   });
 
   it("createRoleAssignment and deleteRoleAssignment", async function() {
+    // if (isPlaybackMode()) {
+    //   recorder.skip(undefined, "UUIDs are necessary to run this, but they're unique, so we're unable to mock them");
+    // }
     const roleDefinition = (await client.listRoleDefinitions(globalScope).next()).value;
-    const name = uuidv4();
+    const name = generateFakeUUID();
     const assignment = await client.createRoleAssignment(globalScope, name, roleDefinition.id!, env.AZURE_TENANT_ID);
     assert.equal(assignment.name, name);
     assert.equal(assignment.properties?.roleDefinitionId, roleDefinition.id);
@@ -69,7 +74,7 @@ describe("KeyVaultAccessControlClient", () => {
 
   it("createRoleAssignment, getRoleAssignment and deleteRoleAssignment", async function() {
     const roleDefinition = (await client.listRoleDefinitions(globalScope).next()).value;
-    const name = uuidv4();
+    const name = generateFakeUUID();
     await client.createRoleAssignment(globalScope, name, roleDefinition.id!, env.AZURE_TENANT_ID);
     const assignment = await client.getRoleAssignment(globalScope, name);    
     assert.equal(assignment.name, name);

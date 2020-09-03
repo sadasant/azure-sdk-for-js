@@ -1,6 +1,6 @@
 let nock = require('nock');
 
-module.exports.hash = "ebc59ef20346d706f1dbe9e323c9290d";
+module.exports.hash = "a53145d563369b7a1285efc043840c75";
 
 module.exports.testInfo = {"uniqueName":{},"newDate":{}}
 
@@ -12,7 +12,7 @@ nock('https://eastus2.keyvault_name.managedhsm-int.azure-int.net:443', {"encoded
   'x-content-type-options',
   'nosniff',
   'www-authenticate',
-  'Bearer authorization="https://login.windows-ppe.net/azure_tenant_id", resource="https://managedhsm-int.azure-int.net"',
+  'Bearer authorization="https://login.windows-ppe.net/01ea9a65-813e-4238-8204-bf7328d63fc6", resource="https://managedhsm-int.azure-int.net"',
   'x-frame-options',
   'SAMEORIGIN',
   'content-length',
@@ -56,4 +56,84 @@ nock('https://eastus2.keyvault_name.managedhsm-int.azure-int.net:443', {"encoded
   'x-ms-keyvault-network-info',
   'addr=108.226.109.105',
   'x-ms-server-latency',
-  '1' ]);
+  '2' ]);
+
+nock('https://eastus2.keyvault_name.managedhsm-int.azure-int.net:443', {"encodedQueryParams":true})
+  .put('///providers/Microsoft.Authorization/roleAssignments/06217763-9724-4b26-9eed-c7ab7f90897d', {"properties":{"roleDefinitionId":"Microsoft.KeyVault/providers/Microsoft.Authorization/roleDefinitions/a290e904-7015-4bba-90c8-60543313cdb4","principalId":"01ea9a65-813e-4238-8204-bf7328d63fc6"}})
+  .query(true)
+  .reply(201, {"id":"/providers/Microsoft.Authorization/roleAssignments/06217763-9724-4b26-9eed-c7ab7f90897d","name":"06217763-9724-4b26-9eed-c7ab7f90897d","properties":{"principalId":"01ea9a65-813e-4238-8204-bf7328d63fc6","roleDefinitionId":"Microsoft.KeyVault/providers/Microsoft.Authorization/roleDefinitions/a290e904-7015-4bba-90c8-60543313cdb4","scope":"/"},"type":"Microsoft.Authorization/roleAssignments"}, [ 'content-type',
+  'application/json; charset=utf-8',
+  'x-content-type-options',
+  'nosniff',
+  'content-length',
+  '398',
+  'x-ms-request-id',
+  '47087520-ec74-11ea-be1e-0242ac120005',
+  'x-ms-keyvault-region',
+  'EASTUS',
+  'strict-transport-security',
+  'max-age=31536000; includeSubDomains',
+  'content-security-policy',
+  'default-src \'self\'',
+  'x-ms-keyvault-network-info',
+  'addr=108.226.109.105',
+  'x-ms-server-latency',
+  '271',
+  'cache-control',
+  'no-cache',
+  'x-frame-options',
+  'SAMEORIGIN' ]);
+
+nock('https://eastus2.keyvault_name.managedhsm-int.azure-int.net:443', {"encodedQueryParams":true})
+  .get('///providers/Microsoft.Authorization/roleAssignments/06217763-9724-4b26-9eed-c7ab7f90897d')
+  .query(true)
+  .reply(200, {"id":"/providers/Microsoft.Authorization/roleAssignments/06217763-9724-4b26-9eed-c7ab7f90897d","name":"06217763-9724-4b26-9eed-c7ab7f90897d","properties":{"principalId":"01ea9a65-813e-4238-8204-bf7328d63fc6","roleDefinitionId":"Microsoft.KeyVault/providers/Microsoft.Authorization/roleDefinitions/a290e904-7015-4bba-90c8-60543313cdb4","scope":"/"},"type":"Microsoft.Authorization/roleAssignments"}, [ 'x-frame-options',
+  'SAMEORIGIN',
+  'x-ms-request-id',
+  '47087520-ec74-11ea-be1e-0242ac120005',
+  'content-type',
+  'application/json; charset=utf-8',
+  'x-ms-keyvault-region',
+  'EASTUS',
+  'content-length',
+  '398',
+  'strict-transport-security',
+  'max-age=31536000; includeSubDomains',
+  'content-security-policy',
+  'default-src \'self\'',
+  'cache-control',
+  'no-cache',
+  'x-content-type-options',
+  'nosniff',
+  'x-ms-build-version',
+  '1.0.20200901-1-40187cd0-develop',
+  'x-ms-keyvault-network-info',
+  'addr=108.226.109.105',
+  'x-ms-server-latency',
+  '0' ]);
+
+nock('https://eastus2.keyvault_name.managedhsm-int.azure-int.net:443', {"encodedQueryParams":true})
+  .delete('///providers/Microsoft.Authorization/roleAssignments/06217763-9724-4b26-9eed-c7ab7f90897d')
+  .query(true)
+  .reply(200, {"id":"/providers/Microsoft.Authorization/roleAssignments/06217763-9724-4b26-9eed-c7ab7f90897d","name":"06217763-9724-4b26-9eed-c7ab7f90897d","properties":{"principalId":"01ea9a65-813e-4238-8204-bf7328d63fc6","roleDefinitionId":"Microsoft.KeyVault/providers/Microsoft.Authorization/roleDefinitions/a290e904-7015-4bba-90c8-60543313cdb4","scope":"/"},"type":"Microsoft.Authorization/roleAssignments"}, [ 'content-type',
+  'application/json; charset=utf-8',
+  'x-content-type-options',
+  'nosniff',
+  'content-length',
+  '398',
+  'x-ms-request-id',
+  '47087520-ec74-11ea-be1e-0242ac120005',
+  'x-ms-keyvault-region',
+  'EASTUS',
+  'strict-transport-security',
+  'max-age=31536000; includeSubDomains',
+  'content-security-policy',
+  'default-src \'self\'',
+  'x-ms-keyvault-network-info',
+  'addr=108.226.109.105',
+  'x-ms-server-latency',
+  '310',
+  'cache-control',
+  'no-cache',
+  'x-frame-options',
+  'SAMEORIGIN' ]);

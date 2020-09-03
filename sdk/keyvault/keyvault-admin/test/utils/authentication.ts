@@ -2,26 +2,33 @@
 // Licensed under the MIT license.
 
 import { AzureCliCredential } from "@azure/identity";
-import { record, RecorderEnvironmentSetup } from "@azure/test-utils-recorder";
+import { isPlaybackMode, isRecordMode, record, RecorderEnvironmentSetup } from "@azure/test-utils-recorder";
+import { v4 as uuidv4 } from "uuid";
 
 import { KeyVaultAccessControlClient } from '../../src';
 import { getKeyvaultName, getKeyVaultUrl } from "./common";
 import { uniqueString } from "./recorder";
 
 export async function authenticate(that: any): Promise<any> {
+  function generateFakeUUID(): string {
+    return isPlaybackMode() ? "b36b00af-89c6-435f-a43d-9a3087015c27" : uuidv4();
+  }
+
   const secretSuffix = uniqueString();
   const recorderEnvSetup: RecorderEnvironmentSetup = {
     replaceableVariables: {
       AZURE_CLIENT_ID: "azure_client_id",
       AZURE_CLIENT_SECRET: "azure_client_secret",
-      AZURE_TENANT_ID: "azure_tenant_id",
+      AZURE_TENANT_ID: "01ea9a65-813e-4238-8204-bf7328d63fc6",
       KEYVAULT_NAME: "keyvault_name"
     },
     customizationsOnRecordings: [
       (recording: any): any =>
         recording.replace(/"access_token":"[^"]*"/g, `"access_token":"access_token"`),
       (recording: any): any =>
-        secretSuffix === "" ? recording : recording.replace(new RegExp(secretSuffix, "g"), "")
+        secretSuffix === "" ? recording : recording.replace(new RegExp(secretSuffix, "g"), ""),
+      (recording: any): any => 
+        recording.replace(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/ig, "b36b00af-89c6-435f-a43d-9a3087015c27") // Fake UUID
     ],
     queryParametersToSkip: []
   };
@@ -32,5 +39,5 @@ export async function authenticate(that: any): Promise<any> {
   const keyVaultUrl = getKeyVaultUrl() || `https://${keyVaultName}.vault.azure.net`;
   const client = new KeyVaultAccessControlClient(keyVaultUrl, credential);
 
-  return { recorder, client, secretSuffix };
+  return { recorder, client, secretSuffix, generateFakeUUID };
 }
