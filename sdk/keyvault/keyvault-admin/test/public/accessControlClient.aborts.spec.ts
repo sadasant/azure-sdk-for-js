@@ -16,7 +16,7 @@ describe("Aborting KeyVaultAccessControlClient's requests", () => {
 
   beforeEach(async function() {
     const authentication = await authenticate(this);
-    client = authentication.client;
+    client = authentication.accessControlClient;
     recorder = authentication.recorder;
     generateFakeUUID = authentication.generateFakeUUID;
   });

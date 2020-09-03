@@ -42,3 +42,11 @@ export async function assertThrowsAbortError(cb: () => Promise<any>): Promise<vo
     throw new Error("Expected cb to throw an AbortError");
   }
 }
+
+export function formatName(name: string): string {
+  return name.replace(/[^0-9a-zA-Z-]/g, "");
+}
+
+export function getFolderName(storageURI: string): string {
+  return storageURI; // TODO
+}

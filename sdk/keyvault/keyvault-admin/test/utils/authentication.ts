@@ -2,15 +2,11 @@
 // Licensed under the MIT license.
 
 import { AzureCliCredential } from "@azure/identity";
-import {
-  isPlaybackMode,
-  isRecordMode,
-  record,
-  RecorderEnvironmentSetup
-} from "@azure/test-utils-recorder";
+import { KeyClient } from "@azure/keyvault-keys";
+import { isPlaybackMode, record, RecorderEnvironmentSetup } from "@azure/test-utils-recorder";
 import { v4 as uuidv4 } from "uuid";
 
-import { KeyVaultAccessControlClient } from "../../src";
+import { KeyVaultAccessControlClient, KeyVaultBackupClient } from "../../src";
 import { getKeyvaultName, getKeyVaultUrl } from "./common";
 import { uniqueString } from "./recorder";
 
@@ -45,7 +41,9 @@ export async function authenticate(that: any): Promise<any> {
 
   const keyVaultName = getKeyvaultName();
   const keyVaultUrl = getKeyVaultUrl() || `https://${keyVaultName}.vault.azure.net`;
-  const client = new KeyVaultAccessControlClient(keyVaultUrl, credential);
+  const accessControlClient = new KeyVaultAccessControlClient(keyVaultUrl, credential);
+  const backupClient = new KeyVaultBackupClient(keyVaultUrl, credential);
+  const keyClient = new KeyClient(keyVaultUrl, credential);
 
-  return { recorder, client, secretSuffix, generateFakeUUID };
+  return { recorder, accessControlClient, backupClient, keyClient, secretSuffix, generateFakeUUID };
 }
