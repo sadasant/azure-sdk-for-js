@@ -10,8 +10,8 @@ import {
 } from "@azure/core-http";
 import { KeyVaultClient } from "../../generated/keyVaultClient";
 import {
-  KeyVaultClientFullRestoreOperationOptionalParams,
-  KeyVaultClientFullRestoreStatusResponse
+  KeyVaultClientFullBackupStatusResponse,
+  KeyVaultClientFullRestoreOperationOptionalParams
 } from "../../generated/models";
 import { createSpan, setParentSpan } from "../../tracing";
 import { KeyVaultClientFullRestoreOperationResponse } from "../../generated/models";
@@ -143,13 +143,13 @@ async function fullRestoreStatus(
   vaultUrl: string,
   jobId: string,
   options: OperationOptions
-): Promise<KeyVaultClientFullRestoreStatusResponse> {
+): Promise<KeyVaultClientFullBackupStatusResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
   const span = createSpan("generatedClient.fullRestoreStatus", requestOptions);
 
-  let response: KeyVaultClientFullRestoreStatusResponse;
+  let response: KeyVaultClientFullBackupStatusResponse;
   try {
-    response = await client.fullRestoreStatus(vaultUrl, jobId, setParentSpan(span, requestOptions));
+    response = await client.fullBackupStatus(vaultUrl, jobId, setParentSpan(span, requestOptions));
   } finally {
     span.end();
   }
