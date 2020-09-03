@@ -10,9 +10,9 @@ import {
 } from "@azure/core-http";
 import { KeyVaultClient } from "../../generated/keyVaultClient";
 import {
-  KeyVaultClientFullRestoreStatusResponse,
+  KeyVaultClientFullBackupStatusResponse,
   KeyVaultClientSelectiveKeyRestoreOperationOptionalParams,
-  KeyVaultClientSelectiveKeyRestoreOperationResponse,
+  KeyVaultClientSelectiveKeyRestoreOperationResponse
 } from "../../generated/models";
 import { createSpan, setParentSpan } from "../../tracing";
 
@@ -120,7 +120,8 @@ export interface SelectiveRestorePollOperationState extends PollOperationState<u
 /**
  * An interface representing a restore Key Vault's poll operation.
  */
-export interface SelectiveRestorePollOperation extends PollOperation<SelectiveRestorePollOperationState, string> {}
+export interface SelectiveRestorePollOperation
+  extends PollOperation<SelectiveRestorePollOperationState, string> {}
 
 /**
  * Tracing the selectiveRestore operation
@@ -136,7 +137,11 @@ async function selectiveRestore(
 
   let response: KeyVaultClientSelectiveKeyRestoreOperationResponse;
   try {
-    response = await client.selectiveKeyRestoreOperation(vaultUrl, keyName, setParentSpan(span, requestOptions));
+    response = await client.selectiveKeyRestoreOperation(
+      vaultUrl,
+      keyName,
+      setParentSpan(span, requestOptions)
+    );
   } finally {
     span.end();
   }
@@ -152,13 +157,13 @@ async function fullRestoreStatus(
   vaultUrl: string,
   jobId: string,
   options: OperationOptions
-): Promise<KeyVaultClientFullRestoreStatusResponse> {
+): Promise<KeyVaultClientFullBackupStatusResponse> {
   const requestOptions = operationOptionsToRequestOptionsBase(options);
   const span = createSpan("generatedClient.fullRestoreStatus", requestOptions);
 
-  let response: KeyVaultClientFullRestoreStatusResponse;
+  let response: KeyVaultClientFullBackupStatusResponse;
   try {
-    response = await client.fullRestoreStatus(vaultUrl, jobId, options);
+    response = await client.fullBackupStatus(vaultUrl, jobId, options);
   } finally {
     span.end();
   }
@@ -269,7 +274,9 @@ function toString(this: SelectiveRestorePollOperation): string {
  * @summary Builds the SelectiveRestorePollOperation
  * @param [state] A poll operation's state, in case the new one is intended to follow up where the previous one was left.
  */
-export function makeSelectiveRestorePollOperation(state: SelectiveRestorePollOperationState): SelectiveRestorePollOperation {
+export function makeSelectiveRestorePollOperation(
+  state: SelectiveRestorePollOperationState
+): SelectiveRestorePollOperation {
   return {
     state: {
       ...state
