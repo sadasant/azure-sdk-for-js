@@ -45,7 +45,7 @@ export class KeyVaultBackupClient {
    * import { KeyVaultBackupClient } from "@azure/keyvault-admin";
    * import { DefaultAzureCredential } from "@azure/identity";
    *
-   * let vaultUrl = `https://<MY KEYVAULT HERE>.vault.azure.net`;
+   * let vaultUrl = `https://<MY KEY VAULT HERE>.vault.azure.net`;
    * let credentials = new DefaultAzureCredential();
    *
    * let client = new KeyVaultBackupClient(vaultUrl, credentials);
