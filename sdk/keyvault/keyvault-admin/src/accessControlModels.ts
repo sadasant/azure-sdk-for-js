@@ -5,7 +5,7 @@ import * as coreHttp from "@azure/core-http";
 import { SUPPORTED_API_VERSIONS } from "./constants";
 
 /**
- * The optional parameters accepted by the KeyVaultAccessControlClient
+ * The optional parameters accepted by the Key Vault's AccessControlClient
  */
 export interface AccessControlClientOptions extends coreHttp.PipelineOptions {
   /**

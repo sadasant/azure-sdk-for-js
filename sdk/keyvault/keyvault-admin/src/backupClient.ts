@@ -122,8 +122,8 @@ export class KeyVaultBackupClient {
    * const backupUri = await poller.pollUntilDone();
    * console.log(backupUri);
    * ```
-   * @summary Creates a new role assignment.
-   * @param blobStorageUri The URL of the blob storage resource, with the path to the folder name where the backup will end up being generated.
+   * @summary Starts a full backup operation.
+   * @param blobStorageUri The URL of the blob storage resource, including the path to the container where the backup will end up being stored.
    * @param sasToken The SAS token.
    * @param [options] The optional parameters.
    */
@@ -158,7 +158,7 @@ export class KeyVaultBackupClient {
    * Starts restoring all key materials using the SAS token pointing to a previously stored Azure Blob storage
    * backup folder.
    *
-   * This function returns a Long Running Operation poller that allows you to wait indefinitely until the Key Vault backup is generated.
+   * This function returns a Long Running Operation poller that allows you to wait indefinitely until the Key Vault restore operation is complete.
    *
    * Example usage:
    * ```ts
@@ -178,8 +178,8 @@ export class KeyVaultBackupClient {
    * const backupUri = await poller.pollUntilDone();
    * console.log(backupUri);
    * ```
-   * @summary Creates a new role assignment.
-   * @param blobStorageUri The URL of the blob storage resource, with the folder name of the blob where the previous successful full backup was stored.
+   * @summary Starts a full restore operation.
+   * @param blobStorageUri The URL of the blob storage resource where the previous successful full backup was stored.
    * @param sasToken The SAS token.
    * @param folderName The folder name of the blob where the previous successful full backup was stored.
    * @param [options] The optional parameters.
@@ -217,38 +217,38 @@ export class KeyVaultBackupClient {
    * Starts restoring all key versions of a given key using user supplied SAS token pointing to a previously
    * stored Azure Blob storage backup folder.
    *
-   * This function returns a Long Running Operation poller that allows you to wait indefinitely until the Key Vault backup is generated.
+   * This function returns a Long Running Operation poller that allows you to wait indefinitely until the Key Vault selective restore is complete.
    *
    * Example usage:
    * ```ts
    * const client = new KeyVaultBackupClient(url, credentials);
    *
-   * const keyName = "<key-name>";
    * const blobStorageUri = "<blob-storage-uri>";
    * const sasToken = "<sas-token>";
-   * const poller = await client.beginSelectiveRestore(keyName, blobStorageUri, sasToken);
+   * const folderName = "<folder-name>";
+   * const keyName = "<key-name>";
+   * const poller = await client.beginSelectiveRestore(blobStorageUri, sasToken, folderName, keyName);
    *
    * // Serializing the poller
    * const serialized = poller.toString();
    * // A new poller can be created with:
-   * // await client.beginSelectiveRestore(keyName, blobStorageUri, sasToken, { resumeFrom: serialized });
+   * // await client.beginSelectiveRestore(blobStorageUri, sasToken, folderName, keyName, { resumeFrom: serialized });
    *
    * // Waiting until it's done
-   * const backupUri = await poller.pollUntilDone();
-   * console.log(backupUri);
+   * await poller.pollUntilDone();
    * ```
    * @summary Creates a new role assignment.
-   * @param keyName The name of the key that wants to be restored.
    * @param blobStorageUri The URL of the blob storage resource, with the folder name of the blob where the previous successful full backup was stored.
    * @param sasToken The SAS token.
    * @param folderName The Folder name of the blob where the previous successful full backup was stored.
+   * @param keyName The name of the key that wants to be restored.
    * @param [options] The optional parameters.
    */
   public async beginSelectiveRestore(
-    keyName: string,
     blobStorageUri: string,
     sasToken: string,
     folderName: string,
+    keyName: string,
     options: BeginBackupOptions = {}
   ): Promise<PollerLike<PollOperationState<undefined>, undefined>> {
     if (!(keyName && blobStorageUri && sasToken && folderName)) {

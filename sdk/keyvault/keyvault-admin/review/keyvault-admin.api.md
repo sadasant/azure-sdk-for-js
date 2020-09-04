@@ -66,7 +66,7 @@ export class KeyVaultBackupClient {
     constructor(vaultUrl: string, credential: TokenCredential, pipelineOptions?: BackupClientOptions);
     beginBackup(blobStorageUri: string, sasToken: string, options?: BeginBackupOptions): Promise<PollerLike<PollOperationState<string>, string>>;
     beginRestore(blobStorageUri: string, sasToken: string, folderName: string, options?: BeginRestoreOptions): Promise<PollerLike<PollOperationState<undefined>, undefined>>;
-    beginSelectiveRestore(keyName: string, blobStorageUri: string, sasToken: string, folderName: string, options?: BeginBackupOptions): Promise<PollerLike<PollOperationState<undefined>, undefined>>;
+    beginSelectiveRestore(blobStorageUri: string, sasToken: string, folderName: string, keyName: string, options?: BeginBackupOptions): Promise<PollerLike<PollOperationState<undefined>, undefined>>;
     readonly vaultUrl: string;
 }
 
@@ -112,7 +112,7 @@ export interface KeyVaultRoleDefinition {
 }
 
 // @public
-export const LATEST_API_VERSION = "7.1";
+export const LATEST_API_VERSION = "7.2-preview";
 
 // @public
 export interface ListRoleAssignmentsOptions extends coreHttp.OperationOptions {
@@ -139,7 +139,7 @@ export type RoleAssignmentScope = "/" | "/keys" | string;
 export const SDK_VERSION: string;
 
 // @public
-export type SUPPORTED_API_VERSIONS = "7.0" | "7.1" | "7.2-preview";
+export type SUPPORTED_API_VERSIONS = "7.2-preview";
 
 
 // (No @packageDocumentation comment for this package)
