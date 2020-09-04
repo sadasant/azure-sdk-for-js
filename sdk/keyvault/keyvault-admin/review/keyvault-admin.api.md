@@ -66,7 +66,7 @@ export class KeyVaultBackupClient {
     constructor(vaultUrl: string, credential: TokenCredential, pipelineOptions?: BackupClientOptions);
     beginBackup(blobStorageUri: string, sasToken: string, options?: BeginBackupOptions): Promise<PollerLike<PollOperationState<string>, string>>;
     beginRestore(blobStorageUri: string, sasToken: string, folderName: string, options?: BeginRestoreOptions): Promise<PollerLike<PollOperationState<undefined>, undefined>>;
-    beginSelectiveRestore(keyName: string, blobStorageUri: string, sasToken: string, folderName: string, options?: BeginBackupOptions): Promise<PollerLike<PollOperationState<undefined>, undefined>>;
+    beginSelectiveRestore(blobStorageUri: string, sasToken: string, folderName: string, keyName: string, options?: BeginBackupOptions): Promise<PollerLike<PollOperationState<undefined>, undefined>>;
     readonly vaultUrl: string;
 }
 
