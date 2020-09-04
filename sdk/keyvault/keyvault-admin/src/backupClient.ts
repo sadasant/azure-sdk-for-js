@@ -4,7 +4,6 @@
 import {
   createPipelineFromOptions,
   isTokenCredential,
-  operationOptionsToRequestOptionsBase,
   signingPolicy,
   TokenCredential
 } from "@azure/core-http";
@@ -132,8 +131,6 @@ export class KeyVaultBackupClient {
     sasToken: string,
     options: BeginBackupOptions = {}
   ): Promise<PollerLike<PollOperationState<string>, string>> {
-    const requestOptions = operationOptionsToRequestOptionsBase(options);
-
     if (!(blobStorageUri && sasToken)) {
       throw new Error(
         "beginBackup requires non-empty strings for the parameters: blobStorageUri and sasToken."
@@ -147,7 +144,7 @@ export class KeyVaultBackupClient {
       vaultUrl: this.vaultUrl,
       intervalInMs: options.intervalInMs,
       resumeFrom: options.resumeFrom,
-      requestOptions
+      requestOptions: options
     });
 
     // This will initialize the poller's operation (the generation of the backup).
@@ -192,8 +189,6 @@ export class KeyVaultBackupClient {
     folderName: string,
     options: BeginRestoreOptions = {}
   ): Promise<PollerLike<PollOperationState<undefined>, undefined>> {
-    const requestOptions = operationOptionsToRequestOptionsBase(options);
-
     if (!(blobStorageUri && sasToken && folderName)) {
       throw new Error(
         "beginRestore requires non-empty strings for the parameters: blobStorageUri, sasToken and folderName."
@@ -208,7 +203,7 @@ export class KeyVaultBackupClient {
       vaultUrl: this.vaultUrl,
       intervalInMs: options.intervalInMs,
       resumeFrom: options.resumeFrom,
-      requestOptions
+      requestOptions: options
     });
 
     // This will initialize the poller's operation (the generation of the backup).
@@ -255,8 +250,6 @@ export class KeyVaultBackupClient {
     folderName: string,
     options: BeginBackupOptions = {}
   ): Promise<PollerLike<PollOperationState<undefined>, undefined>> {
-    const requestOptions = operationOptionsToRequestOptionsBase(options);
-
     if (!(keyName && blobStorageUri && sasToken && folderName)) {
       throw new Error(
         "beginSelectiveRestore requires non-empty strings for the parameters: keyName, blobStorageUri, sasToken and folderName."
@@ -272,7 +265,7 @@ export class KeyVaultBackupClient {
       vaultUrl: this.vaultUrl,
       intervalInMs: options.intervalInMs,
       resumeFrom: options.resumeFrom,
-      requestOptions
+      requestOptions: options
     });
 
     // This will initialize the poller's operation (the generation of the backup).
