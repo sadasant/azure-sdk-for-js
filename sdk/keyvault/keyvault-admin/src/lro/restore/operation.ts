@@ -5,7 +5,6 @@ import { AbortSignalLike } from "@azure/abort-controller";
 import { PollOperationState, PollOperation } from "@azure/core-lro";
 import {
   OperationOptions,
-  operationOptionsToRequestOptionsBase,
   RequestOptionsBase
 } from "@azure/core-http";
 import { KeyVaultClient } from "../../generated/keyVaultClient";
@@ -122,12 +121,11 @@ async function fullRestore(
   vaultUrl: string,
   options: KeyVaultClientFullRestoreOperationOptionalParams
 ): Promise<KeyVaultClientFullRestoreOperationResponse> {
-  const requestOptions = operationOptionsToRequestOptionsBase(options);
-  const span = createSpan("generatedClient.fullRestore", requestOptions);
+  const span = createSpan("generatedClient.fullRestore", options);
 
   let response: KeyVaultClientFullRestoreOperationResponse;
   try {
-    response = await client.fullRestoreOperation(vaultUrl, setParentSpan(span, requestOptions));
+    response = await client.fullRestoreOperation(vaultUrl, setParentSpan(span, options));
   } finally {
     span.end();
   }
@@ -144,12 +142,11 @@ async function fullRestoreStatus(
   jobId: string,
   options: OperationOptions
 ): Promise<KeyVaultClientFullBackupStatusResponse> {
-  const requestOptions = operationOptionsToRequestOptionsBase(options);
-  const span = createSpan("generatedClient.fullRestoreStatus", requestOptions);
+  const span = createSpan("generatedClient.fullRestoreStatus", options);
 
   let response: KeyVaultClientFullBackupStatusResponse;
   try {
-    response = await client.fullBackupStatus(vaultUrl, jobId, setParentSpan(span, requestOptions));
+    response = await client.fullBackupStatus(vaultUrl, jobId, setParentSpan(span, options));
   } finally {
     span.end();
   }
