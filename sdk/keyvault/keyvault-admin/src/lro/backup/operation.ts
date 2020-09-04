@@ -207,12 +207,7 @@ async function update(
   }
 
   if (!state.isCompleted) {
-    const serviceOperation = await fullBackupStatus(
-      client,
-      vaultUrl,
-      state.jobId,
-      requestOptions
-    );
+    const serviceOperation = await fullBackupStatus(client, vaultUrl, state.jobId, requestOptions);
     const {
       azureStorageBlobContainerUri,
       endTime,
