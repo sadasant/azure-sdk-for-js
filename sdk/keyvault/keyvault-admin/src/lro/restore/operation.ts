@@ -133,13 +133,13 @@ async function fullRestore(
 /**
  * Tracing the fullRestoreStatus operation.
  */
-async function fullRestoreStatus(
+async function fullBackupStatus(
   client: KeyVaultClient,
   vaultUrl: string,
   jobId: string,
   options: OperationOptions
 ): Promise<KeyVaultClientFullBackupStatusResponse> {
-  const span = createSpan("generatedClient.fullRestoreStatus", options);
+  const span = createSpan("generatedClient.fullBackupStatus", options);
 
   let response: KeyVaultClientFullBackupStatusResponse;
   try {
@@ -175,7 +175,7 @@ async function update(
   }
 
   if (!state.isStarted) {
-    const fullRestoreOperation = await fullRestore(client, vaultUrl, {
+    const serviceOperation = await fullRestore(client, vaultUrl, {
       ...requestOptions,
       restoreBlobDetails: {
         folderToRestore: folderName,
@@ -186,7 +186,7 @@ async function update(
       }
     });
 
-    const { startTime, jobId, endTime, error } = fullRestoreOperation;
+    const { startTime, jobId, endTime, error } = serviceOperation;
 
     if (!startTime) {
       state.error = new Error(`Missing "startTime" from the full restore operation.`);
@@ -198,8 +198,8 @@ async function update(
     state.jobId = jobId;
     state.endTime = endTime;
     state.startTime = startTime;
-    state.status = fullRestoreOperation.status;
-    state.statusDetails = fullRestoreOperation.statusDetails;
+    state.status = serviceOperation.status;
+    state.statusDetails = serviceOperation.statusDetails;
 
     if (endTime) {
       state.isCompleted = true;
@@ -217,10 +217,10 @@ async function update(
   }
 
   if (!state.isCompleted) {
-    const fullRestoreOperation = await fullRestoreStatus(client, vaultUrl, state.jobId, {
+    const serviceOperation = await fullBackupStatus(client, vaultUrl, state.jobId, {
       requestOptions
     });
-    const { endTime, error } = fullRestoreOperation;
+    const { endTime, error } = serviceOperation;
     if (endTime) {
       state.isCompleted = true;
     }

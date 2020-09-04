@@ -167,7 +167,7 @@ async function update(
   }
 
   if (!state.isStarted) {
-    const fullBackupOperation = await fullBackup(client, vaultUrl, {
+    const serviceOperation = await fullBackup(client, vaultUrl, {
       ...requestOptions,
       azureStorageBlobContainerUri: {
         storageResourceUri: blobStorageUri,
@@ -175,7 +175,7 @@ async function update(
       }
     });
 
-    const { startTime, jobId, azureStorageBlobContainerUri, endTime, error } = fullBackupOperation;
+    const { startTime, jobId, azureStorageBlobContainerUri, endTime, error } = serviceOperation;
 
     if (!startTime) {
       state.error = new Error(`Missing "startTime" from the full backup operation.`);
@@ -187,8 +187,8 @@ async function update(
     state.jobId = jobId;
     state.endTime = endTime;
     state.startTime = startTime;
-    state.status = fullBackupOperation.status;
-    state.statusDetails = fullBackupOperation.statusDetails;
+    state.status = serviceOperation.status;
+    state.statusDetails = serviceOperation.statusDetails;
     state.result = azureStorageBlobContainerUri;
 
     if (endTime) {
@@ -207,7 +207,7 @@ async function update(
   }
 
   if (!state.isCompleted) {
-    const fullBackupOperation = await fullBackupStatus(
+    const serviceOperation = await fullBackupStatus(
       client,
       vaultUrl,
       state.jobId,
@@ -219,7 +219,7 @@ async function update(
       status,
       statusDetails,
       error
-    } = fullBackupOperation;
+    } = serviceOperation;
 
     state.endTime = endTime;
     state.status = status;

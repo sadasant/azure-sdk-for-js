@@ -21,6 +21,8 @@ import { SelectiveRestorePoller } from "./lro/selectiveRestore/poller";
 /**
  * The KeyVaultBackupClient provides methods to generate backups
  * and restore backups of any given Azure Key Vault instance.
+ * This client supports generating full backups, selective restores of specific keys
+ * and full restores of Key Vault instances.
  */
 export class KeyVaultBackupClient {
   /**
@@ -48,10 +50,9 @@ export class KeyVaultBackupClient {
    *
    * let client = new KeyVaultBackupClient(vaultUrl, credentials);
    * ```
-   * @param {string} vaultUrl the URL of the Key Vault. It should have this shape: https://${your-key-vault-name}.vault.azure.net
-   * @param {TokenCredential} credential An object that implements the `TokenCredential` interface used to authenticate requests to the service. Use the @azure/identity package to create a credential that suits your needs.
-   * @param {BackupClientOptions} [pipelineOptions] Pipeline options used to configure Key Vault API requests. Omit this parameter to use the default pipeline configuration.
-   * @memberof KeyVaultBackupClient
+   * @param vaultUrl the URL of the Key Vault. It should have this shape: https://${your-key-vault-name}.vault.azure.net
+   * @param credential An object that implements the `TokenCredential` interface used to authenticate requests to the service. Use the @azure/identity package to create a credential that suits your needs.
+   * @param [pipelineOptions] Pipeline options used to configure Key Vault API requests. Omit this parameter to use the default pipeline configuration.
    */
   constructor(
     vaultUrl: string,
@@ -108,7 +109,7 @@ export class KeyVaultBackupClient {
    * ```ts
    * const client = new KeyVaultBackupClient(url, credentials);
    *
-   * const blobStorageUri = "<blob-storage-uri>";
+   * const blobStorageUri = "<blob-storage-uri>"; // <Blob storage URL>/<container name>
    * const sasToken = "<sas-token>";
    * const poller = await client.beginBackup(blobStorageUri, sasToken);
    *
@@ -122,9 +123,9 @@ export class KeyVaultBackupClient {
    * console.log(backupUri);
    * ```
    * @summary Creates a new role assignment.
-   * @param {string} blobStorageUri The URI of the blob storage account.
-   * @param {string} sasToken The SAS token.
-   * @param {CreateRoleAssignmentOptions} [options] The optional parameters.
+   * @param blobStorageUri The URL of the blob storage account, with the path to the folder name where the backup will end up being generated.
+   * @param sasToken The SAS token.
+   * @param [options] The optional parameters.
    */
   public async beginBackup(
     blobStorageUri: string,
@@ -163,7 +164,7 @@ export class KeyVaultBackupClient {
    * ```ts
    * const client = new KeyVaultBackupClient(url, credentials);
    *
-   * const blobStorageUri = "<blob-storage-uri>";
+   * const blobStorageUri = "<blob-storage-url>"; // Without the <container name>
    * const sasToken = "<sas-token>";
    * const folderName = "<folder-name>";
    * const poller = await client.beginRestore(blobStorageUri, sasToken, folderName);
@@ -178,10 +179,10 @@ export class KeyVaultBackupClient {
    * console.log(backupUri);
    * ```
    * @summary Creates a new role assignment.
-   * @param {string} blobStorageUri The URI of the blob storage account.
-   * @param {string} sasToken The SAS token.
-   * @param {string} folderName The Folder name of the blob where the previous successful full backup was stored.
-   * @param {CreateRoleAssignmentOptions} [options] The optional parameters.
+   * @param blobStorageUri The URL of the blob storage account, without the folder name of the blob where the previous successful full backup was stored.
+   * @param sasToken The SAS token.
+   * @param folderName The folder name of the blob where the previous successful full backup was stored.
+   * @param [options] The optional parameters.
    */
   public async beginRestore(
     blobStorageUri: string,
@@ -237,11 +238,11 @@ export class KeyVaultBackupClient {
    * console.log(backupUri);
    * ```
    * @summary Creates a new role assignment.
-   * @param {string} keyName The name of the key that wants to be restored.
-   * @param {string} blobStorageUri The URI of the blob storage account.
-   * @param {string} sasToken The SAS token.
-   * @param {string} folderName The Folder name of the blob where the previous successful full backup was stored.
-   * @param {CreateRoleAssignmentOptions} [options] The optional parameters.
+   * @param keyName The name of the key that wants to be restored.
+   * @param blobStorageUri The URL of the blob storage account, without the folder name of the blob where the previous successful full backup was stored.
+   * @param sasToken The SAS token.
+   * @param folderName The Folder name of the blob where the previous successful full backup was stored.
+   * @param [options] The optional parameters.
    */
   public async beginSelectiveRestore(
     keyName: string,
