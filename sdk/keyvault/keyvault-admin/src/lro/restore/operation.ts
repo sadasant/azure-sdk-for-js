@@ -3,10 +3,7 @@
 
 import { AbortSignalLike } from "@azure/abort-controller";
 import { PollOperationState, PollOperation } from "@azure/core-lro";
-import {
-  OperationOptions,
-  RequestOptionsBase
-} from "@azure/core-http";
+import { OperationOptions, RequestOptionsBase } from "@azure/core-http";
 import { KeyVaultClient } from "../../generated/keyVaultClient";
 import {
   KeyVaultClientFullBackupStatusResponse,
