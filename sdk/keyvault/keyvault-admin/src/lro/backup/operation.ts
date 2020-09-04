@@ -10,7 +10,7 @@ import {
   KeyVaultClientFullBackupStatusResponse
 } from "../../generated/models";
 import { createSpan, setParentSpan } from "../../tracing";
-import { BeginBackupOptions } from '../../backupClientModels';
+import { BeginBackupOptions } from "../../backupClientModels";
 
 /**
  * An interface representing the publicly available properties of the state of a backup Key Vault's poll operation.
@@ -207,8 +207,19 @@ async function update(
   }
 
   if (!state.isCompleted) {
-    const fullBackupOperation = await fullBackupStatus(client, vaultUrl, state.jobId, requestOptions);
-    const { azureStorageBlobContainerUri, endTime, status, statusDetails, error } = fullBackupOperation;
+    const fullBackupOperation = await fullBackupStatus(
+      client,
+      vaultUrl,
+      state.jobId,
+      requestOptions
+    );
+    const {
+      azureStorageBlobContainerUri,
+      endTime,
+      status,
+      statusDetails,
+      error
+    } = fullBackupOperation;
 
     state.endTime = endTime;
     state.status = status;

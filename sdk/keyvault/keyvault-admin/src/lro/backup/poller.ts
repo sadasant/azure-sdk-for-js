@@ -3,7 +3,7 @@
 
 import { delay } from "@azure/core-http";
 import { Poller } from "@azure/core-lro";
-import { BeginBackupOptions } from '../../backupClientModels';
+import { BeginBackupOptions } from "../../backupClientModels";
 import { KeyVaultClient } from "../../generated/keyVaultClient";
 import {
   BackupOperationState,

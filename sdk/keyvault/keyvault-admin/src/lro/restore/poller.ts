@@ -3,7 +3,7 @@
 
 import { delay } from "@azure/core-http";
 import { Poller } from "@azure/core-lro";
-import { BeginRestoreOptions } from '../..';
+import { BeginRestoreOptions } from "../..";
 import { KeyVaultClient } from "../../generated/keyVaultClient";
 import {
   RestoreOperationState,
@@ -32,7 +32,6 @@ export class RestorePoller extends Poller<RestorePollOperationState, undefined> 
    */
   public intervalInMs: number;
   constructor(options: RestorePollerOptions) {
-
     const {
       client,
       vaultUrl,
