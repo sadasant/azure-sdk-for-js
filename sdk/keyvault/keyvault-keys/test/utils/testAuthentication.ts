@@ -26,7 +26,7 @@ export async function authenticate(that: any): Promise<any> {
     queryParametersToSkip: []
   };
   const recorder = record(that, recorderEnvSetup);
-  const credential = await new ClientSecretCredential(
+  const credential = new ClientSecretCredential(
     env.AZURE_TENANT_ID,
     env.AZURE_CLIENT_ID,
     env.AZURE_CLIENT_SECRET
