@@ -6,10 +6,12 @@ import { createHash } from "crypto";
 import { CryptographyClient, KeyClient, KeyVaultKey } from "../../src";
 import * as dotenv from "dotenv";
 import { ClientSecretCredential, TokenCredential } from "@azure/identity";
+import { delay } from "@azure/core-http";
 
 dotenv.config();
 
 // npm run perfstress-test:node -- SignTest --warmup 30 --duration 20 --iterations 120 --milliseconds-to-log 10000
+// npm run perfstress-test:node -- SignTest --warmup 0 --duration 2400 --parallel 5 > output 2>&1
 
 interface SignTestOptions {
   valueSize: number;
@@ -36,6 +38,7 @@ export class SignTest extends PerfStressTest {
   public keyName: string;
   public keyVaultKey: KeyVaultKey | undefined;
   public total = 0;
+  public cryptoClient: CryptographyClient | undefined;
 
   constructor() {
     super();
@@ -55,44 +58,47 @@ export class SignTest extends PerfStressTest {
 
 
   public async globalSetup(): Promise<void> {
+  }
+
+  public async globalCleanup() {
+  }
+
+  public async setup() {
+    console.log(process.memoryUsage().heapUsed);
+    try {
+      this.keyVaultKey = await this.keyClient.getKey(this.keyName);
+      console.log("Got key vault key", !!this.keyVaultKey);
+      this.cryptoClient = new CryptographyClient(this.keyVaultKey!.id!, this.credential!);
+      return;
+    } catch (e) {
+    }
+    console.log("No key vault key, getting deleted");
     try {
       const deletedKey = await this.keyClient.getDeletedKey(this.keyName);
       await this.keyClient.purgeDeletedKey(deletedKey.name);
     } catch (e) {
     }
-    try {
-      const key = await this.keyClient.getKey(this.keyName);
-      const deletePoller = await this.keyClient.beginDeleteKey(key.name);
-      await deletePoller.pollUntilDone();
-      await this.keyClient.purgeDeletedKey(key.name);
-    } catch (e) {
-    }
+    console.log("No deleted key vault key, making new");
     this.keyVaultKey = await this.keyClient.createKey(this.keyName, "RSA");
+    this.cryptoClient = new CryptographyClient(this.keyVaultKey!.id!, this.credential!);
   }
 
-  public async globalCleanup() {
+  public async cleanup() {
+    console.log(process.memoryUsage().heapUsed);
     const deletePoller = await this.keyClient.beginDeleteKey(this.keyName);
     await deletePoller.pollUntilDone();
     await this.keyClient.purgeDeletedKey(this.keyName);
-  }
-
-  public setup() {
-    console.log(process.memoryUsage().heapUsed);
-  }
-
-  public cleanup() {
-    console.log(process.memoryUsage().heapUsed);
   }
 
   async runAsync(): Promise<void> {
     const hash = createHash("sha256");
     hash.update(this.value!);
     const digest = hash.digest();
-    const cryptoClient = new CryptographyClient(this.keyVaultKey!.id!, this.credential!);
-    await cryptoClient.sign("RS256", digest);
-    if (this.total % 500) {
+    await this.cryptoClient!.sign("RS256", digest);
+    if (this.total % 100 === 0) {
       console.log(process.memoryUsage().heapUsed);
     }
     this.total++;
+    await delay(200);
   }
 }
