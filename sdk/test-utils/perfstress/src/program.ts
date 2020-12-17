@@ -202,7 +202,7 @@ export class PerfStressProgram {
     const millisecondsToLog = Number(this.parsedDefaultOptions["milliseconds-to-log"].value);
     console.log(
       `\n=== ${title} mode, iteration ${iterationIndex}. Logs every ${millisecondsToLog /
-        1000}s ===`
+      1000}s ===`
     );
     console.log(`Since Last Log\t\tTotal`);
     let lastInIteration = 0;
