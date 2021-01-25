@@ -39,8 +39,12 @@ function readClientDetails(): ClientDetails {
   return undefined;
 }
 
+let cachedCredential: InteractiveBrowserCredential | undefined;
+
 function getCredential(clientDetails: ClientDetails): InteractiveBrowserCredential | undefined {
-  return clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
+  if (cachedCredential) return cachedCredential;
+  cachedCredential = clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
+  return cachedCredential;
 }
 
 function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetailsEditorProps) {
