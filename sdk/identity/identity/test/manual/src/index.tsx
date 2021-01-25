@@ -39,11 +39,13 @@ function readClientDetails(): ClientDetails {
   return undefined;
 }
 
+let lastLoginStyle: BrowserLoginStyle | undefined;
 let cachedCredential: InteractiveBrowserCredential | undefined;
 
 function getCredential(clientDetails: ClientDetails): InteractiveBrowserCredential | undefined {
-  if (cachedCredential) return cachedCredential;
+  if (cachedCredential && clientDetails.loginStyle === lastLoginStyle) return cachedCredential;
   cachedCredential = clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
+  lastLoginStyle = clientDetails.loginStyle;
   return cachedCredential;
 }
 
