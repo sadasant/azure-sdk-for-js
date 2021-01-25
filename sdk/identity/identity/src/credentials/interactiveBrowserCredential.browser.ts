@@ -125,7 +125,7 @@ export class InteractiveBrowserCredential implements TokenCredential {
           logger.info(
             `WARNING: More than one account was found. Cleaning the MSAL cache. A new login needs to be processed.`
           );
-          this.msalObject.logout();
+          // TODO: When available, use this.msalObject.localLogout()
         } else if (accounts.length === 1) {
           this.msalObject.setActiveAccount(accounts[0]);
         } else {
