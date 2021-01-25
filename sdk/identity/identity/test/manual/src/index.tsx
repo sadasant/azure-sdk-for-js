@@ -41,12 +41,19 @@ function readClientDetails(): ClientDetails {
 
 let lastLoginStyle: BrowserLoginStyle | undefined;
 let cachedCredential: InteractiveBrowserCredential | undefined;
-
 function getCredential(clientDetails: ClientDetails): InteractiveBrowserCredential | undefined {
   if (cachedCredential && clientDetails.loginStyle === lastLoginStyle) return cachedCredential;
   cachedCredential = clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
   lastLoginStyle = clientDetails.loginStyle;
   return cachedCredential;
+}
+let lastLoginStyle2: BrowserLoginStyle | undefined;
+let cachedCredential2: InteractiveBrowserCredential | undefined;
+function getCredential2(clientDetails: ClientDetails): InteractiveBrowserCredential | undefined {
+  if (cachedCredential2 && clientDetails.loginStyle === lastLoginStyle2) return cachedCredential2;
+  cachedCredential2 = clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
+  lastLoginStyle2 = clientDetails.loginStyle;
+  return cachedCredential2;
 }
 
 function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetailsEditorProps) {
@@ -223,6 +230,7 @@ function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDe
 
   React.useEffect(() => {
     const credential = getCredential(clientDetails);
+    const credential2 = getCredential2(clientDetails);
     if (serviceBusEndpoint.trim().length === 0) {
       setError("You must enter a service bus endpoint to send a message.")
     } else if (credential === undefined) {
@@ -235,6 +243,7 @@ function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDe
         if (body) {
           console.log({ serviceBusEndpoint });
           const serviceBusClient = new ServiceBusClient(serviceBusEndpoint, credential);
+          const serviceBusClient2 = new ServiceBusClient(serviceBusEndpoint, credential2);
 
           try {
             const sender = serviceBusClient.createSender(queueName);
@@ -249,6 +258,21 @@ function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDe
           } finally {
             await serviceBusClient.close();
           }
+
+          try {
+            const sender = serviceBusClient2.createSender(queueName);
+            await sender.sendMessages({ body });
+            await sender.close();
+            const receiver = serviceBusClient2.createReceiver(queueName);
+            const messages = await receiver.receiveMessages(10);
+            await receiver.close();
+            console.log("Received messages:\n", messages.map(m => m.body.toString()).join("\n"));
+          } catch (e) {
+            console.info(e);
+          } finally {
+            await serviceBusClient2.close();
+          }
+
         }
 
         setRunning(false)
