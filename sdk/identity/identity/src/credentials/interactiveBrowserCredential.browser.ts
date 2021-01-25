@@ -152,6 +152,7 @@ export class InteractiveBrowserCredential implements TokenCredential {
    * Returns true if the load was successful.
    */
   private loadCachedAccount(): boolean {
+    console.log("LOAD CACHED ACCOUNT", this.account);
     const accounts = this.msalObject.getAllAccounts();
 
     const account = accounts.find((acc) => {
