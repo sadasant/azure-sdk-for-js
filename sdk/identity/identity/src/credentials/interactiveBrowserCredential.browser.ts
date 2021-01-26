@@ -6,14 +6,19 @@ import { AccessToken, TokenCredential, GetTokenOptions } from "@azure/core-http"
 import { IdentityClient } from "../client/identityClient";
 import {
   BrowserLoginStyle,
+  InteractiveBrowserCredentialAuthenticateOptions,
   InteractiveBrowserCredentialOptions
 } from "./interactiveBrowserCredentialOptions";
 import { createSpan } from "../util/tracing";
 import { CanonicalCode } from "@opentelemetry/api";
 import { DefaultTenantId, DeveloperSignOnClientId } from "../constants";
 import { credentialLogger, formatSuccess, formatError } from "../util/logging";
+import { AuthenticationRecord } from "../client/msalClient";
 
 const logger = credentialLogger("InteractiveBrowserCredential");
+
+// We keep a copy of the redirect hash.
+const redirectHash = window.location.hash;
 
 /**
  * Enables authentication to Azure Active Directory inside of the web browser
@@ -51,8 +56,13 @@ export class InteractiveBrowserCredential implements TokenCredential {
     };
 
     this.loginStyle = options.loginStyle || "popup";
-    if (["redirect", "popup"].indexOf(this.loginStyle) === -1) {
-      const error = new Error(`Invalid loginStyle: ${options.loginStyle}`);
+    const loginStyles = ["redirect", "popup"];
+    if (loginStyles.indexOf(this.loginStyle) === -1) {
+      const error = new Error(
+        `Invalid loginStyle: ${
+          options.loginStyle
+        }. Should be any of the following: ${loginStyles.join(", ")}.`
+      );
       logger.info(formatError("", error));
       throw error;
     }
@@ -107,37 +117,68 @@ export class InteractiveBrowserCredential implements TokenCredential {
 
     this.msalObject = new msalBrowser.PublicClientApplication(this.msalConfig);
 
-    this.handleRedirectResponse();
+    if (options.authenticationRecord) {
+      this.msalObject.setActiveAccount(options.authenticationRecord);
+    }
+
+    this.msalObject.handleRedirectPromise(redirectHash).then(this.handleAuthResult);
   }
 
   /**
-   * Handles the redirect response based on the credentials available at page load.
+   * Handles the authentication result for both redirect and popup.
    */
-  private async handleRedirectResponse(): Promise<void> {
+  private async handleAuthResult(
+    result: msalBrowser.AuthenticationResult | null
+  ): Promise<AuthenticationRecord | undefined> {
     try {
-      const result = await this.msalObject.handleRedirectPromise();
       if (result && result.account) {
-        logger.info(`MSAL Browser V2 redirect authentication successful.`);
+        logger.info(`MSAL Browser V2 authentication successful.`);
         this.msalObject.setActiveAccount(result.account);
-      } else {
-        const accounts = this.msalObject.getAllAccounts();
-        if (accounts.length > 1) {
-          throw new Error(
-            [
-              "More than one account was found authenticated for this Client ID and Tenant ID.",
-              "This scenario is not yet supported by @azure/identity.",
-              "For now, you can bypass this error by cleaning up your browser cache."
-            ].join("\n")
-          );
-        } else if (accounts.length === 1) {
-          this.msalObject.setActiveAccount(accounts[0]);
-        } else {
-          logger.info(`No accounts were found through MSAL.`);
-        }
+        return result.account;
       }
+
+      // If by this point we happen to have an active account, we should stop trying to parse this.
+      const activeAccount = this.msalObject.getActiveAccount();
+      if (activeAccount) {
+        return activeAccount;
+      }
+
+      // If we don't have an active account, we try to activate it from all the already loaded accounts.
+      const accounts = this.msalObject.getAllAccounts();
+      if (accounts.length > 1) {
+        // If there's more than one account in memory, we force the user to authenticate again.
+        // At this point we can't identify which account should this credential work with,
+        // since at this point the user won't have provided enough information.
+        // We log a message in case that helps.
+        logger.info(
+          [
+            "More than one account was found authenticated for this Client ID and Tenant ID.",
+            "However, no `authenticationRecord` has been provided for this credential,",
+            "therefore we're unable to pick between these accounts.",
+            "A new login attempt will be requested, to ensure the correct account is picked.",
+            "To work with multiple accounts for the same Client ID and Tenant ID, please provide an `authenticationRecord` when initializing `InteractiveBrowserCredential`."
+          ].join("\n")
+        );
+        // To safely trigger a new login, we're also ensuring the local cache is cleared up for this MSAL object.
+        // However, we want to avoid kicking the user out of their authentication on the Azure side.
+        // We do this by calling to logout while specifying a `onRedirectNavigate` that returns false.
+        await this.msalObject.logout({
+          onRedirectNavigate: () => false
+        });
+        return;
+      }
+
+      // If there's only one account for this MSAL object, we can safely activate it.
+      if (accounts.length === 1) {
+        this.msalObject.setActiveAccount(accounts[0]);
+        return accounts[0];
+      }
+
+      logger.info(`No accounts were found through MSAL.`);
     } catch (e) {
-      logger.info(`Failed to acquire token through the MSAL redirect login method. ${e.message}`);
+      logger.info(`Failed to acquire token through MSAL. ${e.message}`);
     }
+    return;
   }
 
   private async login(scopes: string | string[]): Promise<msalBrowser.AuthenticationResult | null> {
@@ -153,6 +194,26 @@ export class InteractiveBrowserCredential implements TokenCredential {
       case "popup":
         return this.msalObject.loginPopup(loginRequest);
     }
+  }
+
+  /**
+   * Allows users to manually authenticate and retrieve the AuthenticationRecord.
+   * @param options Optional parameters to authenticate with, like the scope.
+   */
+  public async authenticate(
+    options: InteractiveBrowserCredentialAuthenticateOptions
+  ): Promise<AuthenticationRecord | undefined> {
+    // We ensure that redirection is handled at this point.
+    await this.msalObject.handleRedirectPromise(redirectHash);
+
+    // If we have an active account, we return that.
+    let account = this.msalObject.getActiveAccount();
+    if (account) {
+      return account;
+    }
+
+    // Otherwise we try to login.
+    return this.handleAuthResult(await this.login(options.scopes!));
   }
 
   private async acquireToken(
@@ -213,17 +274,10 @@ export class InteractiveBrowserCredential implements TokenCredential {
   ): Promise<AccessToken | null> {
     const { span } = createSpan("InteractiveBrowserCredential-getToken", options);
     try {
-      let account = this.msalObject.getActiveAccount();
-      if (!account) {
-        const result = await this.login(scopes);
-        if (result && result.account) {
-          account = result.account;
-          this.msalObject.setActiveAccount(account);
-        } else {
-          logger.getToken.info("No login response");
-          return null;
-        }
-      }
+      const account = await this.authenticate({
+        scopes,
+        ...options
+      });
 
       const authResponse = await this.acquireToken({
         authority: this.msalConfig.auth.authority!,

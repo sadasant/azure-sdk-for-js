@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { AbortSignalLike } from "@azure/core-http";
 import { TokenCredentialOptions } from "../client/identityClient";
+import { AuthenticationRecord } from "../client/msalClient";
 
 /**
  * The "login style" to use in the authentication flow:
@@ -51,4 +53,30 @@ export interface InteractiveBrowserCredentialOptions extends TokenCredentialOpti
    * Correlation ID that can be customized to keep track of the browser authentication requests.
    */
   correlationId?: string;
+
+  /**
+   * Result of a previous authentication that can be used to retrieve the cached credentials of each individual account.
+   * This is necessary to provide in case the application wants to work with more than one account per
+   * Client ID and Tenant ID pair.
+   *
+   * This record can be retrieved by calling to the InteractiveBrowserCredential's `authenticate()` method, as follows:
+   *
+   *     const authenticationRecord = await credential.authenticate();
+   *
+   */
+  authenticationRecord?: AuthenticationRecord;
+}
+
+/**
+ * Optional parameters to the InteractiveBrowserCredential authenticate() method.
+ */
+export interface InteractiveBrowserCredentialAuthenticateOptions {
+  /**
+   * The signal which can be used to abort requests.
+   */
+  abortSignal?: AbortSignalLike;
+  /**
+   * Scopes to authenticate with.
+   */
+  scopes?: string | string[];
 }
