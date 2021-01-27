@@ -65,6 +65,17 @@ export interface InteractiveBrowserCredentialOptions extends TokenCredentialOpti
    *
    */
   authenticationRecord?: AuthenticationRecord;
+
+  /**
+   * Authentication flow to use.
+   * If the user specifies the implicit-grant flow, we will use MSAL 1.
+   * Otherwise, auth-code will be assumed, which uses PKCE and MSAL 2.
+   * 
+   * For more information:
+   * - Implicit Grant Flow: https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-implicit-grant-flow
+   * - Auth Code Flow: https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow
+   */
+  flow?: "implicit-grant" | "auth-code"
 }
 
 /**
