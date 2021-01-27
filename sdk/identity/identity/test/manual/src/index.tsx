@@ -4,19 +4,21 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import { InteractiveBrowserCredential, BrowserLoginStyle } from "@azure/identity";
-import { KeyClient, KeyVaultKey } from "@azure/keyvault-keys";
+import { InteractiveBrowserCredential, BrowserLoginStyle, InteractiveBrowserAuthenticationFlow } from "@azure/identity";
 import { ServiceBusClient } from "@azure/service-bus"
-
-const getRandomKeyName = () => `key${Math.random()}`.replace(/\./g, "");
 
 interface ClientDetails {
   tenantId: string,
   clientId: string,
+  queueName: string,
   loginStyle: BrowserLoginStyle,
-  keyName: string,
+  flow: InteractiveBrowserAuthenticationFlow,
+  numberOfExecutions: number,
+  cacheCredential: boolean,
+  parallel: boolean,
   serviceBusEndpoint: string,
-  messageText: string
+  messageText: string,
+  output: string,
 }
 
 interface ClientDetailsEditorProps {
@@ -39,21 +41,36 @@ function readClientDetails(): ClientDetails {
   return undefined;
 }
 
+function Radio(options: { values: string[], checkedValue: string, onChange: (value: string) => void }) {
+  const { values, checkedValue, onChange } = options;
+  return (
+    <React.Fragment>
+      {values.map(value => (
+        <div>
+          <label>
+            <input
+              type="radio"
+              value={value}
+              checked={checkedValue === value}
+              onChange={({ target }) => onChange(target.value)} />
+            {value}
+          </label>
+        </div>))}
+    </React.Fragment>
+  );
+}
+
 let lastLoginStyle: BrowserLoginStyle | undefined;
 let cachedCredential: InteractiveBrowserCredential | undefined;
-function getCredential(clientDetails: ClientDetails): InteractiveBrowserCredential | undefined {
+function getCredential(clientDetails: ClientDetails, cacheCredential: boolean): InteractiveBrowserCredential | undefined {
+  if (!cacheCredential) {
+    cachedCredential = undefined;
+    lastLoginStyle = undefined;
+  }
   if (cachedCredential && clientDetails.loginStyle === lastLoginStyle) return cachedCredential;
   cachedCredential = clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
   lastLoginStyle = clientDetails.loginStyle;
   return cachedCredential;
-}
-let lastLoginStyle2: BrowserLoginStyle | undefined;
-let cachedCredential2: InteractiveBrowserCredential | undefined;
-function getCredential2(clientDetails: ClientDetails): InteractiveBrowserCredential | undefined {
-  if (cachedCredential2 && clientDetails.loginStyle === lastLoginStyle2) return cachedCredential2;
-  cachedCredential2 = clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
-  lastLoginStyle2 = clientDetails.loginStyle;
-  return cachedCredential2;
 }
 
 function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetailsEditorProps) {
@@ -62,33 +79,11 @@ function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetail
     onSetClientDetails(newDetails)
   };
 
-  const setLoginStyle = (loginStyle: BrowserLoginStyle) => {
+  const setDetail = (name: keyof ClientDetails, changeValue?: (v: string) => any) => (value: string) =>
     handleDetailsChange({
       ...clientDetails,
-      loginStyle
+      [name]: changeValue ? changeValue(value) : value
     });
-  }
-
-  const setKeyName = (keyName: string) => {
-    handleDetailsChange({
-      ...clientDetails,
-      keyName
-    });
-  }
-
-  const setServiceBusEndpoint = (serviceBusEndpoint: string) => {
-    handleDetailsChange({
-      ...clientDetails,
-      serviceBusEndpoint
-    });
-  }
-
-  const setMessageText = (messageText: string) => {
-    handleDetailsChange({
-      ...clientDetails,
-      messageText
-    });
-  }
 
   return (
     <div>
@@ -105,176 +100,80 @@ function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetail
         </label>
         <br />
         <label>
-          Fill to create a new key with this name:
-          <input type="text" value={getRandomKeyName()} onChange={({ target }) => setKeyName(target.value)} />
+          Queue Name:
+          <input type="text" value={clientDetails.queueName} onChange={({ target }) => handleDetailsChange({ ...clientDetails, queueName: target.value })} />
         </label>
-        <h4>Login Flow Style</h4>
-        <div>
-          <label>
-            <input type="radio" value="popup" checked={clientDetails.loginStyle === "popup"} onChange={({ target }) => setLoginStyle(target.value as BrowserLoginStyle)} />
-            Popup
-          </label>
-        </div>
-        <div>
-          <label>
-            <input type="radio" value="redirect" checked={clientDetails.loginStyle === "redirect"} onChange={({ target }) => setLoginStyle(target.value as BrowserLoginStyle)} />
-            Redirect
-          </label>
-        </div>
+        <br />
+        <h4>Login Style</h4>
+        <Radio values={["popup", "redirect"]} checkedValue={clientDetails.loginStyle} onChange={setDetail("loginStyle")} />
+        <br />
+        <h4>Authentication flow</h4>
+        <Radio values={["implicit-grant", "auth-code"]} checkedValue={clientDetails.flow} onChange={setDetail("flow")} />
+        <br />
+        <h4>Number of executions</h4>
+        <Radio values={["1", "2", "3"]} checkedValue={clientDetails.numberOfExecutions.toString()} onChange={setDetail("numberOfExecutions", x => Number(x))} />
+        <br />
+        <h4>Re-use Credential?</h4>
+        <Radio values={["yes", "no"]} checkedValue={clientDetails.cacheCredential ? "yes" : "no"} onChange={setDetail("cacheCredential", x => x === "yes")} />
+        <br />
+        <h4>Run in parallel?</h4>
+        <Radio values={["yes", "no"]} checkedValue={clientDetails.parallel ? "yes" : "no"} onChange={setDetail("parallel", x => x === "yes")} />
       </form>
-    </div>
+    </div >
   );
 }
 
-function useKeyVaultKeys(vaultName: string, clientDetails: ClientDetails) {
-  const [running, setRunning] = React.useState(false)
-  const [keys, setKeys] = React.useState<KeyVaultKey[]>(undefined)
-  const [error, setErrorInner] = React.useState(undefined);
-  const url = `https://${vaultName}.vault.azure.net`;
+async function sendMessage(serviceBusEndpoint: string, messageText: string, clientDetails: ClientDetails): Promise<void> {
+  for (let i = 0; i < clientDetails.numberOfExecutions; i++) {
+    const credential = getCredential(clientDetails, clientDetails.cacheCredential);
+    const queueName = clientDetails.queueName;
 
-  const setError = (err) => {
-    setRunning(false)
-    setErrorInner(err)
-  }
-
-  React.useEffect(() => {
-    const credential = getCredential(clientDetails);
-    if (vaultName.trim().length === 0) {
-      setError("You must enter a vault name to fetch keys.")
-    } else if (credential === undefined) {
-      setError("You must enter client details to fetch keys.")
-    } else if (running) {
-      // Kick off the request asynchronously.  The setKeys call will
-      // propagate the key list back to the UI state.
-      const keyClient = new KeyClient(url, credential);
-      (async () => {
-        const keyResult = [];
-        setKeys(keyResult);
-
-        if (clientDetails.keyName) {
-          try {
-            await keyClient.createKey(clientDetails.keyName, "RSA");
-          } catch (e) {
-            console.info(e);
-          }
-        }
-
-        for await (const keyProperties of keyClient.listPropertiesOfKeys()) {
-          keyResult.push(await keyClient.getKey(keyProperties.name))
-        }
-
-        setKeys(keyResult);
-        setRunning(false)
-      })().catch(err => setError(err.toString()));
-    } else {
-      setError("")
+    if (credential === undefined) {
+      throw new Error("You must enter client details.");
     }
-  }, [vaultName, clientDetails, running])
 
-  return { keys, fetchKeys: () => setRunning(true), error }
-}
+    if (!messageText) {
+      throw new Error("No message text!");
+    }
 
-interface KeyVaultTestProps {
-  storedVaultName?: string,
-  clientDetails: ClientDetails
-}
+    console.log("Working with", {
+      serviceBusEndpoint,
+      ...clientDetails
+    });
 
-const KeyVaultTest = ({ storedVaultName, clientDetails }: KeyVaultTestProps) => {
-  const [vaultName, setVaultName] = React.useState(storedVaultName || "");
-  const { keys, fetchKeys, error } = useKeyVaultKeys(vaultName, clientDetails);
+    const serviceBusClient = new ServiceBusClient(serviceBusEndpoint, credential);
 
-  const handleVaultNameChange = (newVaultName) => {
-    localStorage.setItem('keyVaultName', newVaultName);
-    setVaultName(newVaultName);
-  };
-
-  return (
-    <div>
-      <h3>List Key Vault Keys</h3>
-      <form onSubmit={e => { fetchKeys(); e.preventDefault(); }}>
-        <label>
-          Vault Name:
-          <input type="text" value={vaultName} onChange={({ target }) => handleVaultNameChange(target.value)} />
-        </label>
-        <input type="submit" value="Get Keys" />
-      </form>
-      {!error ? null : <h3 style={{ color: "red" }}>{error}</h3>}
-      {!keys ? null :
-        (
-          <table>
-            <thead>
-              <tr>
-                <th>Key Name</th>
-                <th>Enabled</th>
-                <th>Expires</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keys.map(key => <tr key={key.name}><td>{key.name}</td><td>{key.properties.enabled.toString()}</td><td>{key.properties.expiresOn && key.properties.expiresOn.toDateString()}</td></tr>)}
-            </tbody>
-          </table>
-        )
-      }
-    </div>
-  );
+    try {
+      const sender = serviceBusClient.createSender(queueName);
+      await sender.sendMessages({ body: messageText });
+      await sender.close();
+      const receiver = serviceBusClient.createReceiver(queueName);
+      const messages = await receiver.receiveMessages(10);
+      await receiver.close();
+      clientDetails.output = "Received messages:\n", messages.map(m => m.body.toString()).join("\n");
+    } catch (e) {
+      throw e;
+    } finally {
+      await serviceBusClient.close();
+    }
+  }
 }
 
 function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDetails: ClientDetails) {
   const [running, setRunning] = React.useState(false)
   const [error, setErrorInner] = React.useState(undefined);
 
-  const setError = (err) => {
+  const setError = (err: Error) => {
     setRunning(false)
     setErrorInner(err)
   }
 
   React.useEffect(() => {
-    const credential = getCredential(clientDetails);
-    const credential2 = getCredential2(clientDetails);
     if (serviceBusEndpoint.trim().length === 0) {
-      setError("You must enter a service bus endpoint to send a message.")
-    } else if (credential === undefined) {
-      setError("You must enter client details to fetch keys.")
+      setError("You must enter a service bus endpoint to send a message.");
     } else if (running) {
       (async () => {
-        const body = clientDetails.messageText || messageText;
-        const queueName = "partitioned-queue";
-
-        if (body) {
-          console.log({ serviceBusEndpoint });
-          const serviceBusClient = new ServiceBusClient(serviceBusEndpoint, credential);
-          const serviceBusClient2 = new ServiceBusClient(serviceBusEndpoint, credential2);
-
-          try {
-            const sender = serviceBusClient.createSender(queueName);
-            await sender.sendMessages({ body });
-            await sender.close();
-            const receiver = serviceBusClient.createReceiver(queueName);
-            const messages = await receiver.receiveMessages(10);
-            await receiver.close();
-            console.log("Received messages:\n", messages.map(m => m.body.toString()).join("\n"));
-          } catch (e) {
-            console.info(e);
-          } finally {
-            await serviceBusClient.close();
-          }
-
-          try {
-            const sender = serviceBusClient2.createSender(queueName);
-            await sender.sendMessages({ body });
-            await sender.close();
-            const receiver = serviceBusClient2.createReceiver(queueName);
-            const messages = await receiver.receiveMessages(10);
-            await receiver.close();
-            console.log("Received messages:\n", messages.map(m => m.body.toString()).join("\n"));
-          } catch (e) {
-            console.info(e);
-          } finally {
-            await serviceBusClient2.close();
-          }
-
-        }
-
+        await sendMessage(serviceBusEndpoint, clientDetails.messageText || messageText, clientDetails);
         setRunning(false)
       })().catch(err => setError(err.toString()));
     } else {
@@ -326,17 +225,31 @@ const ServiceBusTest = ({ storedServiceBusEndpoint, storedMessageText, clientDet
 }
 
 function TestPage() {
-  const storedVaultName = localStorage.getItem('keyVaultName');
   const storedServiceBusEndpoint = localStorage.getItem('serviceBusEndpoint');
   const storedMessageText = localStorage.getItem('messageText');
-  const [clientDetails, setClientDetails] = React.useState<ClientDetails>(readClientDetails() || { tenantId: "", clientId: "", loginStyle: "popup", keyName: "", serviceBusEndpoint: "", messageText: "" })
+  const [clientDetails, setClientDetails] = React.useState<ClientDetails>(
+    readClientDetails() ||
+    {
+      tenantId: "",
+      clientId: "",
+      queueName: "partitioned-queue",
+      loginStyle: "popup",
+      flow: "auth-code",
+      numberOfExecutions: 1,
+      cacheCredential: true,
+      parallel: false,
+      serviceBusEndpoint: "",
+      messageText: "",
+      output: ""
+    })
   return (
     <div>
       <h1>Azure SDK Browser Manual Tests</h1>
       <hr />
       <ClientDetailsEditor clientDetails={clientDetails} onSetClientDetails={setClientDetails} />
-      <KeyVaultTest storedVaultName={storedVaultName} clientDetails={clientDetails} />
       <ServiceBusTest storedServiceBusEndpoint={storedServiceBusEndpoint} storedMessageText={storedMessageText} clientDetails={clientDetails} />
+      <br />
+      <textarea>{clientDetails.output}</textarea>
     </div>
   );
 }

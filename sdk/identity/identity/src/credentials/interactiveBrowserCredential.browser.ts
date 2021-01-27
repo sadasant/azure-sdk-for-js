@@ -64,8 +64,16 @@ export class InteractiveBrowserCredential implements TokenCredential {
       throw error;
     }
 
-    const { clientId, tenantId, authorityHost, correlationId, redirectUri, postLogoutRedirectUri, authenticationRecord } = options;
-      
+    const {
+      clientId,
+      tenantId,
+      authorityHost,
+      correlationId,
+      redirectUri,
+      postLogoutRedirectUri,
+      authenticationRecord
+    } = options;
+
     const msalOptions: MSALOptions = {
       clientId,
       tenantId,
@@ -75,7 +83,10 @@ export class InteractiveBrowserCredential implements TokenCredential {
       loginStyle: this.loginStyle,
       knownAuthorities: tenantId === "adfs" ? (authorityHost ? [authorityHost] : []) : [],
       redirectUri: typeof redirectUri === "function" ? redirectUri() : redirectUri,
-      postLogoutRedirectUri: typeof postLogoutRedirectUri === "function" ? postLogoutRedirectUri() : postLogoutRedirectUri
+      postLogoutRedirectUri:
+        typeof postLogoutRedirectUri === "function"
+          ? postLogoutRedirectUri()
+          : postLogoutRedirectUri
     };
 
     if (options.flow === "implicit-grant") {

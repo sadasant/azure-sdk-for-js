@@ -1,5 +1,8 @@
 import { AuthenticationRecord } from "../../client/msalClient";
-import { BrowserLoginStyle, InteractiveBrowserAuthenticateOptions } from "../interactiveBrowserCredentialOptions";
+import {
+  BrowserLoginStyle,
+  InteractiveBrowserAuthenticateOptions
+} from "../interactiveBrowserCredentialOptions";
 
 export interface MSALOptions {
   clientId?: string;
@@ -8,13 +11,14 @@ export interface MSALOptions {
   knownAuthorities?: string[];
   redirectUri?: string;
   correlationId?: string;
-  postLogoutRedirectUri?: string,
-  authenticationRecord?: AuthenticationRecord,
-  loginStyle: BrowserLoginStyle,
+  postLogoutRedirectUri?: string;
+  authenticationRecord?: AuthenticationRecord;
+  loginStyle: BrowserLoginStyle;
 }
 
 export interface IMSALToken {
-  accessToken?: string, expiresOn: Date | null
+  accessToken?: string;
+  expiresOn: Date | null;
 }
 
 export interface IMSALBrowserFlow {

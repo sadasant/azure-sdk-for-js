@@ -81,7 +81,7 @@ export interface InteractiveBrowserCredentialOptions extends TokenCredentialOpti
    * If the user specifies the implicit-grant flow, we will use MSAL 1.
    * Otherwise, auth-code will be assumed, which uses PKCE and MSAL 2.
    */
-  flow?: InteractiveBrowserAuthenticationFlow
+  flow?: InteractiveBrowserAuthenticationFlow;
 }
 
 /**

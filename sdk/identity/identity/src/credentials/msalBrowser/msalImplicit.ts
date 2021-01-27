@@ -1,14 +1,17 @@
 import * as msal from "msal";
 import { AuthenticationRecord } from "../../client/msalClient";
 import { credentialLogger } from "../../util/logging";
-import { BrowserLoginStyle, InteractiveBrowserAuthenticateOptions } from "../interactiveBrowserCredentialOptions";
+import {
+  BrowserLoginStyle,
+  InteractiveBrowserAuthenticateOptions
+} from "../interactiveBrowserCredentialOptions";
 import { IMSALBrowserFlow, IMSALToken, MSALOptions } from "./msalCommon";
 
 const logger = credentialLogger("MSAL Browser v1 - Implicit Grant Flow");
 
 export class MSALImplicit implements IMSALBrowserFlow {
   private config: msal.Configuration;
-  private app: msal.UserAgentApplication;  
+  private app: msal.UserAgentApplication;
   private loginStyle: BrowserLoginStyle;
   private correlationId?: string;
   private tenantId: string;
@@ -41,10 +44,12 @@ export class MSALImplicit implements IMSALBrowserFlow {
       tenantId: this.tenantId,
       localAccountId: account.accountIdentifier,
       username: account.environment
-    }
+    };
   }
 
-  private async handleResult(result: msal.AuthResponse | null): Promise<AuthenticationRecord | undefined> {
+  private async handleResult(
+    result: msal.AuthResponse | null
+  ): Promise<AuthenticationRecord | undefined> {
     if (result?.account) {
       return this.handleAccount(result?.account);
     }
@@ -97,19 +102,23 @@ export class MSALImplicit implements IMSALBrowserFlow {
     return this.login();
   }
 
-  public async acquireToken(options: InteractiveBrowserAuthenticateOptions): Promise<IMSALToken | undefined> {
+  public async acquireToken(
+    options: InteractiveBrowserAuthenticateOptions
+  ): Promise<IMSALToken | undefined> {
     await this.authenticate();
 
     const scopes = options.scopes;
     if (!scopes) {
-      throw new Error(`Invalid scopes in the acquireToken function of the MSAL Auth Code flow. Received: ${scopes}`);
+      throw new Error(
+        `Invalid scopes in the acquireToken function of the MSAL Auth Code flow. Received: ${scopes}`
+      );
     }
 
     const silentRequest: msal.AuthenticationParameters = {
       authority: this.config.auth.authority!,
       correlationId: this.correlationId, // If undefined, MSAL will automatically generate one.
       scopes: Array.isArray(scopes) ? scopes : scopes.split(",")
-    }
+    };
 
     let authResponse: msal.AuthResponse | undefined;
 

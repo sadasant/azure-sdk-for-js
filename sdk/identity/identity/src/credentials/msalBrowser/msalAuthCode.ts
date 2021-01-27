@@ -1,7 +1,10 @@
 import * as msalBrowser from "@azure/msal-browser";
 import { AuthenticationRecord } from "../../client/msalClient";
 import { credentialLogger } from "../../util/logging";
-import { BrowserLoginStyle, InteractiveBrowserAuthenticateOptions } from "../interactiveBrowserCredentialOptions";
+import {
+  BrowserLoginStyle,
+  InteractiveBrowserAuthenticateOptions
+} from "../interactiveBrowserCredentialOptions";
 import { IMSALBrowserFlow, IMSALToken, MSALOptions } from "./msalCommon";
 
 const logger = credentialLogger("MSAL Browser v2 - Auth Code Flow");
@@ -14,7 +17,7 @@ export class MSALAuthCode implements IMSALBrowserFlow {
   private app: msalBrowser.PublicClientApplication;
   private loginStyle: BrowserLoginStyle;
   private correlationId?: string;
-  
+
   constructor(options: MSALOptions) {
     this.loginStyle = options.loginStyle;
     this.correlationId = options.correlationId;
@@ -62,7 +65,9 @@ export class MSALAuthCode implements IMSALBrowserFlow {
     }
   }
 
-  private async handleResult(result: msalBrowser.AuthenticationResult | null): Promise<AuthenticationRecord | undefined> {
+  private async handleResult(
+    result: msalBrowser.AuthenticationResult | null
+  ): Promise<AuthenticationRecord | undefined> {
     try {
       if (result && result.account) {
         logger.info(`MSAL Browser V2 authentication successful.`);
@@ -111,7 +116,7 @@ export class MSALAuthCode implements IMSALBrowserFlow {
     } catch (e) {
       logger.info(`Failed to acquire token through MSAL. ${e.message}`);
     }
-    return;    
+    return;
   }
 
   public async handleRedirect(): Promise<AuthenticationRecord | undefined> {
@@ -155,19 +160,25 @@ export class MSALAuthCode implements IMSALBrowserFlow {
 
     const scopes = options.scopes;
     if (!scopes) {
-      throw new Error(`Invalid scopes in the authenticate function of the MSAL Auth Code flow. Received: ${scopes}`);
+      throw new Error(
+        `Invalid scopes in the authenticate function of the MSAL Auth Code flow. Received: ${scopes}`
+      );
     }
 
     // Otherwise we try to login.
     return this.login(scopes);
   }
 
-  public async acquireToken(options: InteractiveBrowserAuthenticateOptions): Promise<IMSALToken | undefined> {
+  public async acquireToken(
+    options: InteractiveBrowserAuthenticateOptions
+  ): Promise<IMSALToken | undefined> {
     const account = await this.authenticate(options);
 
     const scopes = options.scopes;
     if (!scopes) {
-      throw new Error(`Invalid scopes in the acquireToken function of the MSAL Auth Code flow. Received: ${scopes}`);
+      throw new Error(
+        `Invalid scopes in the acquireToken function of the MSAL Auth Code flow. Received: ${scopes}`
+      );
     }
 
     const silentRequest: msalBrowser.SilentRequest = {
@@ -176,7 +187,7 @@ export class MSALAuthCode implements IMSALBrowserFlow {
       account,
       forceRefresh: false,
       scopes: Array.isArray(scopes) ? scopes : scopes.split(",")
-    }
+    };
 
     let authResponse: msalBrowser.AuthenticationResult | undefined;
 
