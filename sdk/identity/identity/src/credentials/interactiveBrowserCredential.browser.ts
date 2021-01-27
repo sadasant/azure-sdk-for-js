@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as msalBrowser from "@azure/msal-browser";
 import { AccessToken, TokenCredential, GetTokenOptions } from "@azure/core-http";
 import { IdentityClient } from "../client/identityClient";
 import {
   BrowserLoginStyle,
-  InteractiveBrowserCredentialAuthenticateOptions,
+  InteractiveBrowserAuthenticateOptions,
   InteractiveBrowserCredentialOptions
 } from "./interactiveBrowserCredentialOptions";
 import { createSpan } from "../util/tracing";
@@ -14,9 +13,9 @@ import { CanonicalCode } from "@opentelemetry/api";
 import { DefaultTenantId, DeveloperSignOnClientId } from "../constants";
 import { credentialLogger, formatSuccess, formatError } from "../util/logging";
 import { AuthenticationRecord } from "../client/msalClient";
-import { MSAL2, MSALAuthCode } from "./msalBrowser/msalAuthCode";
-import { MSAL1, MSALImplicit } from "./msalBrowser/msalImplicit";
-import { MSALOptions } from "./msalBrowser/msalCommon";
+import { MSALAuthCode } from "./msalBrowser/msalAuthCode";
+import { MSALImplicit } from "./msalBrowser/msalImplicit";
+import { IMSALBrowserFlow, MSALOptions } from "./msalBrowser/msalCommon";
 
 const logger = credentialLogger("InteractiveBrowserCredential");
 
@@ -29,8 +28,7 @@ export class InteractiveBrowserCredential implements TokenCredential {
   private tenantId: string;
   private clientId: string;
   private loginStyle: BrowserLoginStyle;
-  private correlationId: string | undefined;
-  private msal: MSALImplicit | MSALAuthCode;
+  private msal: IMSALBrowserFlow;
 
   /**
    * Creates an instance of the InteractiveBrowserCredential with the
@@ -65,22 +63,19 @@ export class InteractiveBrowserCredential implements TokenCredential {
       logger.info(formatError("", error));
       throw error;
     }
+
+    const { clientId, tenantId, authorityHost, correlationId, redirectUri, postLogoutRedirectUri, authenticationRecord } = options;
       
-
-    this.correlationId = options.correlationId;
-
     const msalOptions: MSALOptions = {
+      clientId,
+      tenantId,
+      authorityHost,
+      correlationId,
+      authenticationRecord,
       loginStyle: this.loginStyle,
-      clientId: options.clientId,
-      tenantId: options.tenantId,
-      authorityHost: options.authorityHost,
-      knownAuthorities: options.tenantId === "adfs" ? (options.authorityHost ? [options.authorityHost] : []) : [],
-      redirectUri: typeof options.redirectUri === "function" ? options.redirectUri() : options.redirectUri,
-      postLogoutRedirectUri:
-      typeof options.postLogoutRedirectUri === "function"
-        ? options.postLogoutRedirectUri()
-        : options.postLogoutRedirectUri,
-      authenticationRecord: options.authenticationRecord
+      knownAuthorities: tenantId === "adfs" ? (authorityHost ? [authorityHost] : []) : [],
+      redirectUri: typeof redirectUri === "function" ? redirectUri() : redirectUri,
+      postLogoutRedirectUri: typeof postLogoutRedirectUri === "function" ? postLogoutRedirectUri() : postLogoutRedirectUri
     };
 
     if (options.flow === "implicit-grant") {
@@ -99,61 +94,9 @@ export class InteractiveBrowserCredential implements TokenCredential {
    * @param options Optional parameters to authenticate with, like the scope.
    */
   public async authenticate(
-    options: InteractiveBrowserCredentialAuthenticateOptions
+    options: InteractiveBrowserAuthenticateOptions
   ): Promise<AuthenticationRecord | undefined> {
-    // We ensure that redirection is handled at this point.
-    await this.msal.handleRedirect();
-
-    // If we have an active account, we return that.
-    let account = this.msal.getActiveAccount();
-    if (account) {
-      return account;
-    }
-
-    // Otherwise we try to login.
-    return this.handleAuthResult(await this.login(options.scopes!));
-  }
-
-  private async acquireToken(
-    authParams: msalBrowser.SilentRequest
-  ): Promise<msalBrowser.AuthenticationResult | undefined> {
-    let authResponse: msalBrowser.AuthenticationResult | undefined;
-    try {
-      logger.info("Attempting to acquire token silently");
-      authResponse = await this.msalObject.acquireTokenSilent(authParams);
-    } catch (err) {
-      if (err instanceof msalBrowser.AuthError) {
-        switch (err.errorCode) {
-          case "consent_required":
-          case "interaction_required":
-          case "login_required":
-            logger.info(`Authentication returned errorCode ${err.errorCode}`);
-            break;
-          default:
-            logger.info(formatError(authParams.scopes, `Failed to acquire token: ${err.message}`));
-            throw err;
-        }
-      }
-    }
-
-    if (authResponse === undefined) {
-      logger.info(
-        `Silent authentication failed, falling back to interactive method ${this.loginStyle}`
-      );
-      switch (this.loginStyle) {
-        case "redirect":
-          // This will go out of the page.
-          // Once the InteractiveBrowserCredential is initialized again,
-          // we'll load the MSAL account in the constructor.
-          await this.msalObject.acquireTokenRedirect(authParams);
-          return undefined;
-        case "popup":
-          authResponse = await this.msalObject.acquireTokenPopup(authParams);
-          break;
-      }
-    }
-
-    return authResponse;
+    return this.msal.authenticate(options);
   }
 
   /**
@@ -172,17 +115,9 @@ export class InteractiveBrowserCredential implements TokenCredential {
   ): Promise<AccessToken | null> {
     const { span } = createSpan("InteractiveBrowserCredential-getToken", options);
     try {
-      const account = await this.authenticate({
+      const authResponse = await this.msal.acquireToken({
         scopes,
         ...options
-      });
-
-      const authResponse = await this.acquireToken({
-        authority: this.msalConfig.auth.authority!,
-        correlationId: this.correlationId, // If undefined, MSAL will automatically generate one.
-        account,
-        forceRefresh: false,
-        scopes: Array.isArray(scopes) ? scopes : scopes.split(",")
       });
 
       if (!authResponse) {
@@ -192,6 +127,11 @@ export class InteractiveBrowserCredential implements TokenCredential {
 
       if (!authResponse.expiresOn) {
         logger.getToken.info(`Response had no "expiresOn" property.`);
+        return null;
+      }
+
+      if (!authResponse.accessToken) {
+        logger.getToken.info(`Response had no "accessToken" property.`);
         return null;
       }
 

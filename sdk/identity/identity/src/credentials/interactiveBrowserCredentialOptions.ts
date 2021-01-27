@@ -81,7 +81,7 @@ export interface InteractiveBrowserCredentialOptions extends TokenCredentialOpti
 /**
  * Optional parameters to the InteractiveBrowserCredential authenticate() method.
  */
-export interface InteractiveBrowserCredentialAuthenticateOptions {
+export interface InteractiveBrowserAuthenticateOptions {
   /**
    * The signal which can be used to abort requests.
    */

@@ -1,21 +1,23 @@
 import * as msalBrowser from "@azure/msal-browser";
 import { AuthenticationRecord } from "../../client/msalClient";
 import { credentialLogger } from "../../util/logging";
-import { BrowserLoginStyle } from "../interactiveBrowserCredentialOptions";
-import { MSALBrowserFlow, MSALOptions } from "./msalCommon";
+import { BrowserLoginStyle, InteractiveBrowserAuthenticateOptions } from "../interactiveBrowserCredentialOptions";
+import { IMSALBrowserFlow, IMSALToken, MSALOptions } from "./msalCommon";
 
 const logger = credentialLogger("MSAL Browser v2 - Auth Code Flow");
 
 // We keep a copy of the redirect hash.
 const redirectHash = window.location.hash;
 
-export class MSALAuthCode implements MSALBrowserFlow {
+export class MSALAuthCode implements IMSALBrowserFlow {
   private config: msalBrowser.Configuration;
   private app: msalBrowser.PublicClientApplication;
   private loginStyle: BrowserLoginStyle;
+  private correlationId?: string;
   
   constructor(options: MSALOptions) {
     this.loginStyle = options.loginStyle;
+    this.correlationId = options.correlationId;
     this.config = {
       auth: {
         clientId: options.clientId!, // we just initialized it above
@@ -133,5 +135,89 @@ export class MSALAuthCode implements MSALBrowserFlow {
 
   public getActiveAccount(): AuthenticationRecord | undefined {
     return this.app.getActiveAccount() || undefined;
+  }
+
+  /**
+   * Allows users to manually authenticate and retrieve the AuthenticationRecord.
+   * @param options Optional parameters to authenticate with, like the scope.
+   */
+  public async authenticate(
+    options: InteractiveBrowserAuthenticateOptions
+  ): Promise<AuthenticationRecord | undefined> {
+    // We ensure that redirection is handled at this point.
+    await this.handleRedirect();
+
+    // If we have an active account, we return that.
+    let account = this.getActiveAccount();
+    if (account) {
+      return account;
+    }
+
+    const scopes = options.scopes;
+    if (!scopes) {
+      throw new Error(`Invalid scopes in the authenticate function of the MSAL Auth Code flow. Received: ${scopes}`);
+    }
+
+    // Otherwise we try to login.
+    return this.login(scopes);
+  }
+
+  public async acquireToken(options: InteractiveBrowserAuthenticateOptions): Promise<IMSALToken | undefined> {
+    const account = await this.authenticate(options);
+
+    const scopes = options.scopes;
+    if (!scopes) {
+      throw new Error(`Invalid scopes in the acquireToken function of the MSAL Auth Code flow. Received: ${scopes}`);
+    }
+
+    const silentRequest: msalBrowser.SilentRequest = {
+      authority: this.config.auth.authority!,
+      correlationId: this.correlationId, // If undefined, MSAL will automatically generate one.
+      account,
+      forceRefresh: false,
+      scopes: Array.isArray(scopes) ? scopes : scopes.split(",")
+    }
+
+    let authResponse: msalBrowser.AuthenticationResult | undefined;
+
+    try {
+      logger.info("Attempting to acquire token silently");
+      authResponse = await this.app.acquireTokenSilent(silentRequest);
+    } catch (err) {
+      if (err instanceof msalBrowser.AuthError) {
+        switch (err.errorCode) {
+          case "consent_required":
+          case "interaction_required":
+          case "login_required":
+            logger.info(`Authentication returned errorCode ${err.errorCode}`);
+            break;
+          default:
+            logger.info(`Failed to acquire token: ${err.message}`);
+            throw err;
+        }
+      }
+    }
+
+    if (authResponse === undefined) {
+      logger.info(
+        `Silent authentication failed, falling back to interactive method ${this.loginStyle}`
+      );
+      switch (this.loginStyle) {
+        case "redirect":
+          // This will go out of the page.
+          // Once the InteractiveBrowserCredential is initialized again,
+          // we'll load the MSAL account in the constructor.
+          await this.app.acquireTokenRedirect(silentRequest);
+          return undefined;
+        case "popup":
+          authResponse = await this.app.acquireTokenPopup(silentRequest);
+          break;
+      }
+    }
+
+    return {
+      accessToken: authResponse.accessToken,
+      expiresOn: authResponse.expiresOn
+    };
   }
 }

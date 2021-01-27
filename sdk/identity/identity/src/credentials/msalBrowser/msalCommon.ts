@@ -1,5 +1,5 @@
 import { AuthenticationRecord } from "../../client/msalClient";
-import { BrowserLoginStyle } from "../interactiveBrowserCredentialOptions";
+import { BrowserLoginStyle, InteractiveBrowserAuthenticateOptions } from "../interactiveBrowserCredentialOptions";
 
 export interface MSALOptions {
   clientId?: string;
@@ -7,13 +7,22 @@ export interface MSALOptions {
   authorityHost?: string;
   knownAuthorities?: string[];
   redirectUri?: string;
+  correlationId?: string;
   postLogoutRedirectUri?: string,
   authenticationRecord?: AuthenticationRecord,
-  loginStyle: BrowserLoginStyle
+  loginStyle: BrowserLoginStyle,
 }
 
-export interface MSALBrowserFlow {
+export interface IMSALToken {
+  accessToken?: string, expiresOn: Date | null
+}
+
+export interface IMSALBrowserFlow {
   handleRedirect(): Promise<AuthenticationRecord | undefined>;
   login(scopes: string | string[]): Promise<AuthenticationRecord | undefined>;
   getActiveAccount(): AuthenticationRecord | undefined;
+  acquireToken(options: InteractiveBrowserAuthenticateOptions): Promise<IMSALToken | undefined>;
+  authenticate(
+    options: InteractiveBrowserAuthenticateOptions
+  ): Promise<AuthenticationRecord | undefined>;
 }

@@ -153,8 +153,10 @@ export class InteractiveBrowserCredential implements TokenCredential {
 
 // @public
 export interface InteractiveBrowserCredentialOptions extends TokenCredentialOptions {
+    authenticationRecord?: AuthenticationRecord;
     clientId?: string;
     correlationId?: string;
+    flow?: "implicit-grant" | "auth-code";
     loginStyle?: BrowserLoginStyle;
     postLogoutRedirectUri?: string | (() => string);
     redirectUri?: string | (() => string);
