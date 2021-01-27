@@ -16,10 +16,18 @@ import { AuthenticationRecord } from "../client/msalClient";
 export type BrowserLoginStyle = "redirect" | "popup";
 
 /**
+ * The Azure authentication flow.
+ * - Implicit Grant Flow: https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-implicit-grant-flow
+ * - Auth Code Flow: https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow
+ */
+export type InteractiveBrowserAuthenticationFlow = "implicit-grant" | "auth-code";
+
+/**
  * Defines options for the InteractiveBrowserCredential class.
  */
 export interface InteractiveBrowserCredentialOptions extends TokenCredentialOptions {
   /**
+   * (Only available if used from a browser)
    * Specifies whether a redirect or a popup window should be used to
    * initiate the user authentication flow. Possible values are "redirect"
    * or "popup" (default) for browser and "popup" (default) for node.
@@ -55,6 +63,7 @@ export interface InteractiveBrowserCredentialOptions extends TokenCredentialOpti
   correlationId?: string;
 
   /**
+   * (Only available if used from a browser)
    * Result of a previous authentication that can be used to retrieve the cached credentials of each individual account.
    * This is necessary to provide in case the application wants to work with more than one account per
    * Client ID and Tenant ID pair.
@@ -67,15 +76,12 @@ export interface InteractiveBrowserCredentialOptions extends TokenCredentialOpti
   authenticationRecord?: AuthenticationRecord;
 
   /**
+   * (Only available if used from a browser)
    * Authentication flow to use.
    * If the user specifies the implicit-grant flow, we will use MSAL 1.
    * Otherwise, auth-code will be assumed, which uses PKCE and MSAL 2.
-   * 
-   * For more information:
-   * - Implicit Grant Flow: https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-implicit-grant-flow
-   * - Auth Code Flow: https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow
    */
-  flow?: "implicit-grant" | "auth-code"
+  flow?: InteractiveBrowserAuthenticationFlow
 }
 
 /**
