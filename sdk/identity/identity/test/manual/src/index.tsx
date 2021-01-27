@@ -68,9 +68,19 @@ function getCredential(clientDetails: ClientDetails, cacheCredential: boolean): 
     lastLoginStyle = undefined;
   }
   if (cachedCredential && clientDetails.loginStyle === lastLoginStyle) return cachedCredential;
-  cachedCredential = clientDetails.tenantId.length > 0 && clientDetails.clientId.length > 0 ? new InteractiveBrowserCredential(clientDetails) : undefined;
-  lastLoginStyle = clientDetails.loginStyle;
-  return cachedCredential;
+
+  const { tenantId, clientId, loginStyle, flow } = clientDetails;
+
+  if (tenantId && clientId && loginStyle && flow) {
+    cachedCredential = new InteractiveBrowserCredential({
+      tenantId,
+      clientId,
+      loginStyle,
+      flow
+    });
+    lastLoginStyle = clientDetails.loginStyle;
+    return cachedCredential;
+  }
 }
 
 function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetailsEditorProps) {
@@ -124,38 +134,36 @@ function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetail
 }
 
 async function sendMessage(serviceBusEndpoint: string, messageText: string, clientDetails: ClientDetails): Promise<void> {
-  for (let i = 0; i < clientDetails.numberOfExecutions; i++) {
-    const credential = getCredential(clientDetails, clientDetails.cacheCredential);
-    const queueName = clientDetails.queueName;
+  const credential = getCredential(clientDetails, clientDetails.cacheCredential);
+  const queueName = clientDetails.queueName;
 
-    if (credential === undefined) {
-      throw new Error("You must enter client details.");
-    }
+  if (credential === undefined) {
+    throw new Error("You must enter client details.");
+  }
 
-    if (!messageText) {
-      throw new Error("No message text!");
-    }
+  if (!messageText) {
+    throw new Error("No message text!");
+  }
 
-    console.log("Working with", {
-      serviceBusEndpoint,
-      ...clientDetails
-    });
+  console.log("Working with", {
+    serviceBusEndpoint,
+    ...clientDetails
+  });
 
-    const serviceBusClient = new ServiceBusClient(serviceBusEndpoint, credential);
+  const serviceBusClient = new ServiceBusClient(serviceBusEndpoint, credential);
 
-    try {
-      const sender = serviceBusClient.createSender(queueName);
-      await sender.sendMessages({ body: messageText });
-      await sender.close();
-      const receiver = serviceBusClient.createReceiver(queueName);
-      const messages = await receiver.receiveMessages(10);
-      await receiver.close();
-      clientDetails.output = "Received messages:\n", messages.map(m => m.body.toString()).join("\n");
-    } catch (e) {
-      throw e;
-    } finally {
-      await serviceBusClient.close();
-    }
+  try {
+    const sender = serviceBusClient.createSender(queueName);
+    await sender.sendMessages({ body: messageText });
+    await sender.close();
+    const receiver = serviceBusClient.createReceiver(queueName);
+    const messages = await receiver.receiveMessages(10);
+    await receiver.close();
+    clientDetails.output = "Received messages:\n", messages.map(m => m.body.toString()).join("\n");
+  } catch (e) {
+    throw e;
+  } finally {
+    await serviceBusClient.close();
   }
 }
 
@@ -163,7 +171,7 @@ function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDe
   const [running, setRunning] = React.useState(false)
   const [error, setErrorInner] = React.useState(undefined);
 
-  const setError = (err: Error) => {
+  const setError = (err: string) => {
     setRunning(false)
     setErrorInner(err)
   }
@@ -173,7 +181,12 @@ function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDe
       setError("You must enter a service bus endpoint to send a message.");
     } else if (running) {
       (async () => {
-        await sendMessage(serviceBusEndpoint, clientDetails.messageText || messageText, clientDetails);
+        for (let i = 0; i < clientDetails.numberOfExecutions; i++) {
+          const promise = sendMessage(serviceBusEndpoint, clientDetails.messageText || messageText, clientDetails);
+          if (!clientDetails.parallel) {
+            await promise;
+          }
+        }
         setRunning(false)
       })().catch(err => setError(err.toString()));
     } else {
