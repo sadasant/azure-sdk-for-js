@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AbortSignalLike } from '@azure/core-http';
 import { AccessToken } from '@azure/core-http';
 import { AzureLogger } from '@azure/logger';
 import { GetTokenOptions } from '@azure/core-http';
@@ -146,11 +147,18 @@ export function getDefaultAzureCredential(): TokenCredential;
 export { GetTokenOptions }
 
 // @public
+export interface InteractiveBrowserAuthenticateOptions {
+    abortSignal?: AbortSignalLike;
+    scopes?: string | string[];
+}
+
+// @public
 export type InteractiveBrowserAuthenticationFlow = "implicit-grant" | "auth-code";
 
 // @public
 export class InteractiveBrowserCredential implements TokenCredential {
     constructor(options?: InteractiveBrowserCredentialOptions);
+    authenticate(_options: InteractiveBrowserAuthenticateOptions): Promise<AuthenticationRecord | undefined>;
     getToken(scopes: string | string[], _options?: GetTokenOptions): Promise<AccessToken | null>;
     }
 

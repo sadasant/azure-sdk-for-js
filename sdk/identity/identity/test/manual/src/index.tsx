@@ -16,8 +16,8 @@ interface ClientDetails {
   numberOfExecutions: number,
   cacheCredential: boolean,
   parallel: boolean,
+  preAuthenticate: boolean,
   serviceBusEndpoint: string,
-  messageText: string,
   output: string,
 }
 
@@ -95,6 +95,7 @@ function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetail
       [name]: changeValue ? changeValue(value) : value
     });
 
+  console.log("ClientDetailsEditor", clientDetails);
   return (
     <div>
       <h3>Enter the details of your Azure AD App Registration:</h3>
@@ -128,12 +129,15 @@ function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetail
         <br />
         <h4>Run in parallel?</h4>
         <Radio values={["yes", "no"]} checkedValue={clientDetails.parallel ? "yes" : "no"} onChange={setDetail("parallel", x => x === "yes")} />
+        <br />
+        <h4>Authenticate before calling to any method?</h4>
+        <Radio values={["yes", "no"]} checkedValue={clientDetails.preAuthenticate ? "yes" : "no"} onChange={setDetail("preAuthenticate", x => x === "yes")} />
       </form>
     </div >
   );
 }
 
-async function sendMessage(serviceBusEndpoint: string, messageText: string, clientDetails: ClientDetails): Promise<void> {
+async function sendMessage(serviceBusEndpoint: string, clientDetails: ClientDetails, onSetClientDetails: React.Dispatch<React.SetStateAction<ClientDetails>>): Promise<string | undefined> {
   const credential = getCredential(clientDetails, clientDetails.cacheCredential);
   const queueName = clientDetails.queueName;
 
@@ -141,40 +145,64 @@ async function sendMessage(serviceBusEndpoint: string, messageText: string, clie
     throw new Error("You must enter client details.");
   }
 
-  if (!messageText) {
-    throw new Error("No message text!");
+  if (clientDetails.preAuthenticate) {
+    const record = await credential.authenticate({
+      scopes: `https://servicebus.azure.net/.default`
+    });
+    console.log({ record });
   }
 
-  console.log("Working with", {
-    serviceBusEndpoint,
-    ...clientDetails
-  });
+  console.log("Working with", serviceBusEndpoint, clientDetails);
 
-  const serviceBusClient = new ServiceBusClient(serviceBusEndpoint, credential);
+  const client = new ServiceBusClient(serviceBusEndpoint, credential);
 
   try {
-    const sender = serviceBusClient.createSender(queueName);
-    await sender.sendMessages({ body: messageText });
+    const sender = client.createSender(queueName);
+    const cleanDetails = {
+      ...clientDetails
+    };
+    delete cleanDetails.output;
+    const body = [
+      "--- Message ---",
+      `Sent at: ${new Date()}`,
+      "Body:",
+      JSON.stringify(cleanDetails),
+      "--- Message End ---"
+    ].join("\n");
+    await sender.sendMessages({ body });
     await sender.close();
-    const receiver = serviceBusClient.createReceiver(queueName);
+    const receiver = client.createReceiver(queueName);
     const messages = await receiver.receiveMessages(10);
+    for (let message of messages) {
+      await receiver.completeMessage(message);
+    }
     await receiver.close();
-    clientDetails.output = "Received messages:\n", messages.map(m => m.body.toString()).join("\n");
+    const output = `Received messages:\n${messages.map(m => m.body.toString()).join("\n")}`;
+    console.log(output);
+    clientDetails.output = output;
+
+    // Scrolling to the bottom of the page.
+    window.scrollTo(0, document.body.scrollHeight);
+    return output;
   } catch (e) {
+    console.error(e);
     throw e;
   } finally {
-    await serviceBusClient.close();
+    await client.close();
   }
 }
 
-function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDetails: ClientDetails) {
+function useServiceBus(serviceBusEndpoint: string, clientDetails: ClientDetails, onSetClientDetails: React.Dispatch<React.SetStateAction<ClientDetails>>) {
   const [running, setRunning] = React.useState(false)
   const [error, setErrorInner] = React.useState(undefined);
+  const [output, setOutput] = React.useState<string>(undefined);
 
   const setError = (err: string) => {
     setRunning(false)
     setErrorInner(err)
   }
+
+  console.log("Use Service Bus Render", clientDetails);
 
   React.useEffect(() => {
     if (serviceBusEndpoint.trim().length === 0) {
@@ -182,9 +210,11 @@ function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDe
     } else if (running) {
       (async () => {
         for (let i = 0; i < clientDetails.numberOfExecutions; i++) {
-          const promise = sendMessage(serviceBusEndpoint, clientDetails.messageText || messageText, clientDetails);
-          if (!clientDetails.parallel) {
-            await promise;
+          const promise = sendMessage(serviceBusEndpoint, clientDetails, onSetClientDetails);
+          if (clientDetails.parallel) {
+            promise.then(setOutput);
+          } else {
+            setOutput(await promise);
           }
         }
         setRunning(false)
@@ -192,30 +222,29 @@ function useServiceBus(serviceBusEndpoint: string, messageText: string, clientDe
     } else {
       setError("")
     }
-  }, [serviceBusEndpoint, messageText, clientDetails, running])
+  }, [serviceBusEndpoint, clientDetails, running])
 
-  return { sendMessage: () => setRunning(true), error }
+  // Triggering a first send if the redirection hash is present.
+  if (window.location.hash) {
+    setTimeout(() => setRunning(true), 1000);
+  }
+
+  return { output, sendMessage: () => setRunning(true), error }
 }
 
 interface ServiceBusTestProps {
   storedServiceBusEndpoint?: string,
-  storedMessageText?: string,
-  clientDetails: ClientDetails
+  clientDetails: ClientDetails,
+  onSetClientDetails: React.Dispatch<React.SetStateAction<ClientDetails>>
 }
 
-const ServiceBusTest = ({ storedServiceBusEndpoint, storedMessageText, clientDetails }: ServiceBusTestProps) => {
+const ServiceBusTest = ({ storedServiceBusEndpoint, clientDetails, onSetClientDetails }: ServiceBusTestProps) => {
   const [serviceBusEndpoint, setServiceBusEndpoint] = React.useState(storedServiceBusEndpoint || "");
-  const [messageText, setMessageText] = React.useState(storedMessageText || "");
-  const { sendMessage, error } = useServiceBus(serviceBusEndpoint, messageText, clientDetails);
+  const { sendMessage, output, error } = useServiceBus(serviceBusEndpoint, clientDetails, onSetClientDetails);
 
   const handleServiceBusEndpointChange = (newServiceBusEndpoint) => {
     localStorage.setItem('serviceBusEndpoint', newServiceBusEndpoint);
     setServiceBusEndpoint(newServiceBusEndpoint);
-  };
-
-  const handleMessageText = (newMessageText) => {
-    localStorage.setItem('messageText', newMessageText);
-    setMessageText(newMessageText);
   };
 
   return (
@@ -226,20 +255,20 @@ const ServiceBusTest = ({ storedServiceBusEndpoint, storedMessageText, clientDet
           Service Bus Endpoint:
           <input type="text" value={serviceBusEndpoint} onChange={({ target }) => handleServiceBusEndpointChange(target.value)} />
         </label>
-        <label>
-          Message to send:
-          <input type="text" value={messageText} onChange={({ target }) => handleMessageText(target.value)} />
-        </label>
+        <br />
+        <br />
         <input type="submit" value="Send Message" />
       </form>
       {!error ? null : <h3 style={{ color: "red" }}>{error}</h3>}
+      <br />
+      <h3>Messages sent<br />(each one with the serialized "clientDetails"):</h3>
+      <pre><code>{output || clientDetails.output}</code></pre>
     </div>
   );
 }
 
 function TestPage() {
   const storedServiceBusEndpoint = localStorage.getItem('serviceBusEndpoint');
-  const storedMessageText = localStorage.getItem('messageText');
   const [clientDetails, setClientDetails] = React.useState<ClientDetails>(
     readClientDetails() ||
     {
@@ -251,18 +280,17 @@ function TestPage() {
       numberOfExecutions: 1,
       cacheCredential: true,
       parallel: false,
+      preAuthenticate: true,
       serviceBusEndpoint: "",
-      messageText: "",
       output: ""
-    })
+    });
+
   return (
     <div>
       <h1>Azure SDK Browser Manual Tests</h1>
       <hr />
       <ClientDetailsEditor clientDetails={clientDetails} onSetClientDetails={setClientDetails} />
-      <ServiceBusTest storedServiceBusEndpoint={storedServiceBusEndpoint} storedMessageText={storedMessageText} clientDetails={clientDetails} />
-      <br />
-      <textarea>{clientDetails.output}</textarea>
+      <ServiceBusTest storedServiceBusEndpoint={storedServiceBusEndpoint} clientDetails={clientDetails} onSetClientDetails={setClientDetails} />
     </div>
   );
 }

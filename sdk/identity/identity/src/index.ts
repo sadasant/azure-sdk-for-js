@@ -21,7 +21,8 @@ export { AuthenticationRecord } from "./client/msalClient";
 export {
   InteractiveBrowserCredentialOptions,
   BrowserLoginStyle,
-  InteractiveBrowserAuthenticationFlow
+  InteractiveBrowserAuthenticationFlow,
+  InteractiveBrowserAuthenticateOptions
 } from "./credentials/interactiveBrowserCredentialOptions";
 export { ManagedIdentityCredential } from "./credentials/managedIdentityCredential";
 export {

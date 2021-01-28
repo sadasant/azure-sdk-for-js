@@ -81,7 +81,8 @@ export class MSALImplicit implements IMSALBrowserFlow {
   }
 
   public getActiveAccount(): AuthenticationRecord | undefined {
-    return this.handleAccount(this.app.getAccount()) || undefined;
+    const account = this.app.getAccount();
+    return account ? this.handleAccount(account) : undefined;
   }
 
   /**
