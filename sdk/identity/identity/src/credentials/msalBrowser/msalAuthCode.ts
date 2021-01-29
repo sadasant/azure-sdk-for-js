@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as msalBrowser from "@azure/msal-browser";
 import { AuthenticationRecord } from "../../client/msalClient";
 import { credentialLogger } from "../../util/logging";
@@ -12,12 +15,23 @@ const logger = credentialLogger("MSAL Browser v2 - Auth Code Flow");
 // We keep a copy of the redirect hash.
 const redirectHash = window.location.hash;
 
+/**
+ * Uses MSAL Browser 2.X for browser authentication,
+ * which uses the Auth Code Flow:
+ * <https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow>
+ */
 export class MSALAuthCode implements IMSALBrowserFlow {
   private config: msalBrowser.Configuration;
   private app: msalBrowser.PublicClientApplication;
   private loginStyle: BrowserLoginStyle;
   private correlationId?: string;
 
+  /**
+   * Sets up an MSAL object based on the given parameters.
+   * MSAL with Auth Code allows sending a previously obtained `authenticationRecord` through the optional parameters,
+   * which is set to be the active account.
+   * @param options - Parameters necessary and otherwise used to create the MSAL object.
+   */
   constructor(options: MSALOptions) {
     this.loginStyle = options.loginStyle;
     this.correlationId = options.correlationId;
@@ -65,6 +79,11 @@ export class MSALAuthCode implements IMSALBrowserFlow {
     }
   }
 
+  /**
+   * Loads the account based on the result of the authentication.
+   * If no result was received, tries to load the account from the cache.
+   * @param result - Result object received from MSAL.
+   */
   private async handleResult(
     result: msalBrowser.AuthenticationResult | null
   ): Promise<AuthenticationRecord | undefined> {
@@ -119,10 +138,16 @@ export class MSALAuthCode implements IMSALBrowserFlow {
     return;
   }
 
+  /**
+   * Uses MSAL to handle the redirect.
+   */
   public async handleRedirect(): Promise<AuthenticationRecord | undefined> {
     return this.handleResult(await this.app.handleRedirectPromise(redirectHash));
   }
 
+  /**
+   * Uses MSAL to trigger a redirect or a popup login.
+   */
   public async login(scopes: string | string[] = []): Promise<AuthenticationRecord | undefined> {
     const arrayScopes = Array.isArray(scopes) ? scopes : [scopes];
     const loginRequest = {
@@ -138,13 +163,16 @@ export class MSALAuthCode implements IMSALBrowserFlow {
     }
   }
 
+  /**
+   * Uses MSAL to retrieve the active account.
+   */
   public getActiveAccount(): AuthenticationRecord | undefined {
     return this.app.getActiveAccount() || undefined;
   }
 
   /**
    * Allows users to manually authenticate and retrieve the AuthenticationRecord.
-   * @param options Optional parameters to authenticate with, like the scope.
+   * @param options - Optional parameters to authenticate with, like the scope.
    */
   public async authenticate(
     options: InteractiveBrowserAuthenticateOptions
@@ -153,7 +181,7 @@ export class MSALAuthCode implements IMSALBrowserFlow {
     await this.handleRedirect();
 
     // If we have an active account, we return that.
-    let account = this.getActiveAccount();
+    const account = this.getActiveAccount();
     if (account) {
       return account;
     }
@@ -169,6 +197,10 @@ export class MSALAuthCode implements IMSALBrowserFlow {
     return this.login(scopes);
   }
 
+  /**
+   * Attempts to retrieve an authenticated token from MSAL.
+   * @param options - Properties useful to retrieve the token, like the scopes and the abortSignal.
+   */
   public async acquireToken(
     options: InteractiveBrowserAuthenticateOptions
   ): Promise<IMSALToken | undefined> {

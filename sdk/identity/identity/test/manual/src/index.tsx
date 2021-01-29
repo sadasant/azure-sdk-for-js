@@ -21,6 +21,33 @@ interface ClientDetails {
   output: string,
 }
 
+const logCopy = window.console.log.bind(window.console);
+window.console.log = (...params: any[]) => {
+  const logs = window.localStorage.getItem("logs");
+  window.localStorage.setItem("logs", `${logs}Log:\n${params.map(x => typeof x === "object" ? JSON.stringify(x) : x).join("\n")}\n\n`);
+  logCopy(...params)
+}
+const infoCopy = window.console.info.bind(window.console);
+window.console.info = (...params: any[]) => {
+  const logs = window.localStorage.getItem("logs");
+  window.localStorage.setItem("logs", `${logs}Info:\n${params.map(x => typeof x === "object" ? JSON.stringify(x) : x).join("\n")}\n\n`);
+  infoCopy(...params)
+}
+const warningCopy = window.console.warn.bind(window.console);
+window.console.warn = (...params: any[]) => {
+  const logs = window.localStorage.getItem("logs");
+  window.localStorage.setItem("logs", `${logs}Warning:\n${params.map(x => typeof x === "object" ? JSON.stringify(x) : x).join("\n")}\n\n`);
+  warningCopy(...params)
+}
+const errorCopy = window.console.error.bind(window.console);
+window.console.error = (...params: any[]) => {
+  const logs = window.localStorage.getItem("logs");
+  window.localStorage.setItem("logs", `${logs}Error:\n${params.map(x => typeof x === "object" ? JSON.stringify(x) : x).join("\n")}\n\n`);
+  errorCopy(...params)
+}
+window.onerror = function (...params) {
+  console.log("window.onerror", params);
+}
 interface ClientDetailsEditorProps {
   clientDetails: ClientDetails,
   onSetClientDetails: React.Dispatch<React.SetStateAction<ClientDetails>>
@@ -95,7 +122,6 @@ function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetail
       [name]: changeValue ? changeValue(value) : value
     });
 
-  console.log("ClientDetailsEditor", clientDetails);
   return (
     <div>
       <h3>Enter the details of your Azure AD App Registration:</h3>
@@ -127,9 +153,17 @@ function ClientDetailsEditor({ clientDetails, onSetClientDetails }: ClientDetail
         <h4>Re-use Credential?</h4>
         <Radio values={["yes", "no"]} checkedValue={clientDetails.cacheCredential ? "yes" : "no"} onChange={setDetail("cacheCredential", x => x === "yes")} />
         <br />
-        <h4>Run in parallel?</h4>
-        <Radio values={["yes", "no"]} checkedValue={clientDetails.parallel ? "yes" : "no"} onChange={setDetail("parallel", x => x === "yes")} />
-        <br />
+        {clientDetails.numberOfExecutions > 1 ? (
+          <React.Fragment>
+            <h4>Run in parallel?</h4>
+            <Radio values={["yes", "no"]} checkedValue={clientDetails.parallel ? "yes" : "no"} onChange={setDetail("parallel", x => x === "yes")} />
+            <small>
+              Running in parallel the first time the authentication happens will cause errors.
+              We're allowing this behavior in the app for testing purposes.
+            </small>
+            <br />
+          </React.Fragment>
+        ) : null}
         <h4>Authenticate before calling to any method?</h4>
         <Radio values={["yes", "no"]} checkedValue={clientDetails.preAuthenticate ? "yes" : "no"} onChange={setDetail("preAuthenticate", x => x === "yes")} />
       </form>
@@ -201,8 +235,6 @@ function useServiceBus(serviceBusEndpoint: string, clientDetails: ClientDetails,
     setRunning(false)
     setErrorInner(err)
   }
-
-  console.log("Use Service Bus Render", clientDetails);
 
   React.useEffect(() => {
     if (serviceBusEndpoint.trim().length === 0) {

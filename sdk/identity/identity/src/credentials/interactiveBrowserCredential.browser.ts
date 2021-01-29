@@ -94,15 +94,11 @@ export class InteractiveBrowserCredential implements TokenCredential {
     } else {
       this.msal = new MSALAuthCode(msalOptions);
     }
-
-    if (options.loginStyle === "redirect") {
-      this.msal.handleRedirect();
-    }
   }
 
   /**
    * Allows users to manually authenticate and retrieve the AuthenticationRecord.
-   * @param options Optional parameters to authenticate with, like the scope.
+   * @param options - Optional parameters to authenticate with, like the scope.
    */
   public async authenticate(
     options: InteractiveBrowserAuthenticateOptions

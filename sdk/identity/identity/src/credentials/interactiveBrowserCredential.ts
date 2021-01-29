@@ -4,7 +4,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { TokenCredential, GetTokenOptions, AccessToken } from "@azure/core-http";
-import { InteractiveBrowserAuthenticateOptions, InteractiveBrowserCredentialOptions } from "./interactiveBrowserCredentialOptions";
+import {
+  InteractiveBrowserAuthenticateOptions,
+  InteractiveBrowserCredentialOptions
+} from "./interactiveBrowserCredentialOptions";
 import { credentialLogger, formatError, formatSuccess } from "../util/logging";
 import { DefaultTenantId, DeveloperSignOnClientId } from "../constants";
 import { Socket } from "net";
@@ -182,11 +185,11 @@ export class InteractiveBrowserCredential implements TokenCredential {
 
   /**
    * Allows users to manually authenticate and retrieve the AuthenticationRecord.
-   * @param options Optional parameters to authenticate with, like the scope.
+   * @param options - Optional parameters to authenticate with, like the scope.
    */
   public async authenticate(
     _options: InteractiveBrowserAuthenticateOptions
   ): Promise<AuthenticationRecord | undefined> {
-    throw new Error("Authenticate is not yet supported in NodeJS")
+    throw new Error("Authenticate is not yet supported in NodeJS");
   }
 }
