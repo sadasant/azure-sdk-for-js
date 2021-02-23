@@ -56,10 +56,11 @@ export function defaultDeviceCodePromptCallback(deviceCodeInfo: DeviceCodeInfo):
   console.log(deviceCodeInfo.message);
 }
 
+// TODO what Scott was saying.
 const MSALNodeDefaultCachePlugin: ICachePlugin = {
   async beforeCacheAccess(_tokenCacheContext: TokenCacheContext) {
 
-  },
+  }
   async afterCacheAccess(_tokenCacheContext: TokenCacheContext) {
 
   }
