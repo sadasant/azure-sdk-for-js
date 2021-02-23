@@ -1,16 +1,19 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { AccessToken, TokenCredential, GetTokenOptions } from "@azure/core-http";
-import { AuthenticationRequired, MsalClient } from "../client/msalClient";
+import { AuthenticationRecord, AuthenticationRequired, MsalClient } from "../client/msalClient";
 import { createSpan } from "../util/tracing";
 import { credentialLogger, formatError, formatSuccess } from "../util/logging";
 import { AuthenticationErrorName } from "../client/errors";
 import { CanonicalCode } from "@opentelemetry/api";
-import { TokenCredentialOptions } from "../client/identityClient";
+import { IdentityClient, TokenCredentialOptions } from "../client/identityClient";
 
-import { DeviceCodeRequest } from "@azure/msal-node";
+import { DeviceCodeRequest, ICachePlugin, TokenCacheContext } from "@azure/msal-node";
 import { checkTenantId } from "../util/checkTenantId";
 import { DeveloperSignOnClientId } from "../constants";
+import { MSALOptions } from "./msalBrowser/msalCommon";
+import { DeviceCodeCredentialOptions } from "./deviceCodeCredentialOptions";
+import { timeStamp } from "console";
 
 /**
  * Provides the user code and verification URI where the code must be
@@ -53,6 +56,16 @@ export function defaultDeviceCodePromptCallback(deviceCodeInfo: DeviceCodeInfo):
   console.log(deviceCodeInfo.message);
 }
 
+const MSALNodeDefaultCachePlugin: ICachePlugin = {
+  async beforeCacheAccess(_tokenCacheContext: TokenCacheContext) {
+
+  },
+  async afterCacheAccess(_tokenCacheContext: TokenCacheContext) {
+
+  }
+}
+
+
 /**
  * Enables authentication to Azure Active Directory using a device code
  * that the user can enter into https://microsoft.com/devicelogin.
@@ -60,6 +73,8 @@ export function defaultDeviceCodePromptCallback(deviceCodeInfo: DeviceCodeInfo):
 export class DeviceCodeCredential implements TokenCredential {
   private userPromptCallback: DeviceCodePromptCallback;
   private msalClient: MsalClient;
+  private correlationId?: string;
+  private account: AuthenticationRecord | undefined;
 
   /**
    * Creates an instance of DeviceCodeCredential with the details needed
@@ -78,9 +93,14 @@ export class DeviceCodeCredential implements TokenCredential {
     tenantId: string = "organizations",
     clientId: string = DeveloperSignOnClientId,
     userPromptCallback: DeviceCodePromptCallback = defaultDeviceCodePromptCallback,
-    options?: TokenCredentialOptions
+    options?: DeviceCodeCredentialOptions
   ) {
     checkTenantId(logger, tenantId);
+
+    options = {
+      ...IdentityClient.getDefaultOptions(),
+      ...options
+    };
 
     this.userPromptCallback = userPromptCallback;
 
@@ -95,12 +115,27 @@ export class DeviceCodeCredential implements TokenCredential {
       authorityHost = "https://login.microsoftonline.com/" + tenantId;
     }
 
-    this.msalClient = new MsalClient(
-      { clientId: clientId, authority: authorityHost },
-      false,
-      undefined,
-      options
-    );
+    this.correlationId = options.correlationId;
+    this.account = options.authenticationRecord;
+
+    this.msalClient = new MsalClient({
+      auth: {
+        clientId: clientId!, // we just initialized it above
+        authority: `${options.authorityHost}/${tenantId}`,
+        knownAuthorities: tenantId === "adfs" ? (authorityHost ? [authorityHost] : []) : [],
+        // If the users picked redirect as their login style,
+        // but they didn't provide a redirectUri,
+        // we can try to use the current page we're in as a default value.
+        redirectUri: options.redirectUri || self.location.origin,
+        postLogoutRedirectUri: options.postLogoutRedirectUri,
+
+      },
+      cache: {
+        cachePlugin: MSALNodeDefaultCachePlugin
+      }
+    }, true);
+
+    this.app = new msal.UserAgentApplication(this.config);
   }
 
   /**

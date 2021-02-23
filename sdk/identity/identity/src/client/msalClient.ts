@@ -19,7 +19,6 @@ import axios, { AxiosRequestConfig } from "axios";
 import { IdentityClient, TokenCredentialOptions } from "./identityClient";
 import { AccessToken } from "@azure/core-http";
 import { credentialLogger } from "../util/logging";
-import { NodeAuthOptions } from "@azure/msal-node/dist/config/Configuration";
 
 const logger = credentialLogger("InteractiveBrowserCredential");
 
@@ -58,7 +57,7 @@ export interface AuthenticationRecord {
   username: string;
 }
 
-export class AuthenticationRequired extends CredentialUnavailable {}
+export class AuthenticationRequired extends CredentialUnavailable { }
 
 export class MsalClient {
   private persistenceEnabled: boolean;
@@ -66,10 +65,10 @@ export class MsalClient {
   private identityClient: IdentityClient;
   private pca: PublicClientApplication | undefined;
   private cca: ConfidentialClientApplication | undefined;
-  private msalConfig: NodeAuthOptions;
+  private msalConfig: Configuration;
 
   constructor(
-    msalConfig: NodeAuthOptions,
+    msalConfig: Configuration,
     persistenceEnabled: boolean,
     authenticationRecord?: AuthenticationRecord,
     options?: TokenCredentialOptions
@@ -87,13 +86,16 @@ export class MsalClient {
     }
 
     // Construct the public client application, since it hasn't been initialized, yet
-    const clientConfig: Configuration = {
-      auth: this.msalConfig,
-      cache: undefined,
-      system: { networkClient: this.identityClient }
+    this.msalConfig = {
+      ...this.msalConfig,
+      auth: this.msalConfig.auth,
+      system: {
+        ...this.msalConfig.system,
+        networkClient: this.identityClient
+      }
     };
 
-    this.pca = new PublicClientApplication(clientConfig);
+    this.pca = new PublicClientApplication(this.msalConfig);
   }
 
   async acquireTokenFromCache(scopes: string[]): Promise<AccessToken | null> {

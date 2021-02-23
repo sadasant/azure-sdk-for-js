@@ -384,14 +384,25 @@ packages:
       node: '>=0.8.0'
     resolution:
       integrity: sha512-Y1Id+jG59S3eY2ZQQtUA/lxwbRcgjcWaiib9YX+SwV3zeRauKfEiZT7l3z+lwV+T+Sst20F6l1mJsfQcfE7CEQ==
-  /@azure/msal-common/4.0.0:
+  /@azure/msal-common/4.0.1:
     dependencies:
       debug: 4.3.1
     dev: false
     engines:
       node: '>=0.8.0'
     resolution:
-      integrity: sha512-aGIUZgaIyb48m9353oepMsoy8tAan4BM6MvQ9FFybRJdMtTlHkXo7BfGcygVSFJlB2AGnW7HhCKAwCKNEpjzeQ==
+      integrity: sha512-dHdTmLnRpqGasqAUCOzDt9Os8rke1cRk6Mo6yeI0ucis+G/CwLFQ2G08SEdPfZZnvemhTRP0l70UBPax1Gwxmw==
+  /@azure/msal-node/1.0.0:
+    dependencies:
+      '@azure/msal-common': 4.0.1
+      axios: 0.21.1
+      jsonwebtoken: 8.5.1
+      uuid: 8.3.2
+    dev: false
+    engines:
+      node: 10 || 12 || 14
+    resolution:
+      integrity: sha512-uc8B9n9U6IRVsCLOn1D39GhuA8CzbxP8MUl53Sr9hyAjJG4W7139dZSCnZ6VCBlgqm7VmtDSKOaOBWvbBjcJzg==
   /@azure/msal-node/1.0.0-beta.3:
     dependencies:
       '@azure/msal-common': 2.1.0
@@ -412,15 +423,6 @@ packages:
       debug: '*'
     resolution:
       integrity: sha512-/KfYRfrsOIrZONvo/0Vi5umuqbPBtCWNtmRvkse64uI0C4CP/W4WXwRD42VMws/8LtKvr1I5rYlYgFzt5zDz/A==
-  /@azure/msal-node/1.0.0-beta.6:
-    dependencies:
-      '@azure/msal-common': 4.0.0
-      axios: 0.21.1
-      jsonwebtoken: 8.5.1
-      uuid: 8.3.2
-    dev: false
-    resolution:
-      integrity: sha512-ZQI11Uz1j0HJohb9JZLRD8z0moVcPks1AFW4Q/Gcl67+QvH4aKEJti7fjCcipEEZYb/qzLSO8U6IZgPYytsiJQ==
   /@azure/storage-blob/12.4.1:
     dependencies:
       '@azure/abort-controller': 1.0.2
@@ -9167,7 +9169,7 @@ packages:
     dev: false
     name: '@rush-temp/core-client'
     resolution:
-      integrity: sha512-psMzl45hb18MrlCDJFo74ZGhySHCUfBuGzODksA6BLAplX2sGc5WFtT57/jUVsjhr4SNhYEDJm0uUu7+BN5ISg==
+      integrity: sha512-fV2a4bb/qEb1hg8B3lnAUJe+a81kl1h7EIHJpaHn7rDQZ+OQeYhDreNnTMBT9d2Ld9q1j72chDib4OitsDkdKw==
       tarball: file:projects/core-client.tgz
     version: 0.0.0
   file:projects/core-crypto.tgz:
@@ -9595,7 +9597,7 @@ packages:
     dev: false
     name: '@rush-temp/data-tables'
     resolution:
-      integrity: sha512-m3hHFly6ovHcHiyvPoQC8OUWj3NQxxigI1j6BwX/5zenfRzKIgcgTLqgYfC90O/s6FJ1LgrkWdN9rx9T6pScvw==
+      integrity: sha512-5n+aDbMGiOupz8kx3byGadfev0ogQc4N0h2goKCsAGO+hN+GR+uDxMc4hdgJhQpRjDqnGu2x+eAK/qDm77s9dg==
       tarball: file:projects/data-tables.tgz
     version: 0.0.0
   file:projects/dev-tool.tgz:
@@ -9904,7 +9906,7 @@ packages:
     dev: false
     name: '@rush-temp/eventgrid'
     resolution:
-      integrity: sha512-i50r+d62Gt8OFidnqrlQpC8eN34OiPdZJDeH9DmNCq7OPjx/rJVaAxmAH18Lfr/timcPP+EwbZTo6jwG0BTQ7w==
+      integrity: sha512-yxMQjwZgF5Q0HOwVCYxzVbzi1Dws7odS1i74eAZo4i/PxCZayZzn4t8s5yyDJzlnOSuaX7jOdJvQCw6tNA6CnA==
       tarball: file:projects/eventgrid.tgz
     version: 0.0.0
   file:projects/eventhubs-checkpointstore-blob.tgz:
@@ -9964,14 +9966,14 @@ packages:
     dev: false
     name: '@rush-temp/eventhubs-checkpointstore-blob'
     resolution:
-      integrity: sha512-SRFOlixCIfs+OakbeGaZ60FmRwcvAQqeRy/wxiGIrvj80+tx6rVIZP/FnMex0abF0KO3442vl3cY0HlpPvPJKw==
+      integrity: sha512-k4WvhN9aA+lhRhruze+6mx8E+JKaS3ZkakxSs0UuDsq+/v4GjnBSEBZ9Ad8P4s7ttMg0cHuj5eOGIUH2WZdQlw==
       tarball: file:projects/eventhubs-checkpointstore-blob.tgz
     version: 0.0.0
   file:projects/identity.tgz:
     dependencies:
       '@azure/core-tracing': 1.0.0-preview.9
       '@azure/msal-browser': 2.9.0
-      '@azure/msal-node': 1.0.0-beta.6
+      '@azure/msal-node': 1.0.0
       '@microsoft/api-extractor': 7.7.11
       '@opentelemetry/api': 0.10.2
       '@rollup/plugin-commonjs': 11.0.2_rollup@1.32.1
@@ -10026,7 +10028,7 @@ packages:
     optionalDependencies:
       keytar: 7.3.0
     resolution:
-      integrity: sha512-tFR61LCHIZDfYb97aYITRuRpTDM7+7O4bQt+Rxuj07YPyrHQH11lmrFsSq2RwaEJUG6W9qfAkvo2ONiPK5k3fw==
+      integrity: sha512-XQtR3u5y64YLt+875pM6jRNIgeFAcjoixq0yRV+P2ZMbI6zz9PfHWZnhrEqqd6kqjATNiepSGHaML1daR5Gj9g==
       tarball: file:projects/identity.tgz
     version: 0.0.0
   file:projects/keyvault-admin.tgz:
@@ -10829,7 +10831,7 @@ packages:
     dev: false
     name: '@rush-temp/storage-blob'
     resolution:
-      integrity: sha512-zHGarbMd34Fqg42CU77TwP5vjskcOUGbwABZ+jUJhOIjNtA4X+YihIKzzQmb0XCmNQ2yVt0mIgchSMdOqEMkeQ==
+      integrity: sha512-+iH3s2UvM4AuviJnJIkQP8AVIgKW2WIvmZrr04cCcGB1026XeK3QPS5NctWpU8ZE3utephA6lWaUrWGvq/aRRw==
       tarball: file:projects/storage-blob.tgz
     version: 0.0.0
   file:projects/storage-file-datalake.tgz:
